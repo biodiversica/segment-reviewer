@@ -1,0 +1,109 @@
+{
+  "meta": { "name": "English", "code": "en" },
+  "app": {
+    "title": "Segment Reviewer",
+    "subtitle": "Review extracted segments"
+  },
+  "toolbar": {
+    "folder": "Segments folder",
+    "language": "Language",
+    "rescan": "Rescan folder",
+    "rescan_hint": "Re-read the folder and rebuild the pending list",
+    "help": "Keyboard shortcuts",
+    "settings": "Settings"
+  },
+  "progress": {
+    "segment": "Segment <b>{index}</b> of <b>{total}</b>",
+    "done": "✔  All segments have been reviewed.",
+    "empty": "No segments waiting for review in this folder.",
+    "counts": "{pending} pending · {true} true · {false} false · {multi} multi"
+  },
+  "meta_row": {
+    "score": "score",
+    "site": "site",
+    "date": "date",
+    "unknown": "?"
+  },
+  "spec": {
+    "type": "Type:",
+    "mel": "Mel",
+    "fft": "FFT (linear)",
+    "fmin": "Min Hz:",
+    "fmax": "Max Hz:",
+    "db": "dB floor:",
+    "nyquist": "(Max Hz = 0 → Nyquist)",
+    "error": "Spectrogram error: {error}",
+    "loading": "Rendering spectrogram…"
+  },
+  "audio": {
+    "error": "Audio error: {error}",
+    "unsupported": "Your browser cannot play this file."
+  },
+  "nav": {
+    "prev": "← Prev",
+    "true": "✔  True",
+    "false": "✘  False",
+    "next": "Next →"
+  },
+  "labels": {
+    "row": "Labels:",
+    "placeholder": "Label(s) for this segment, separated by commas",
+    "pick": "— pick from list —"
+  },
+  "false_row": {
+    "prompt_list": "Pick the correct label for this segment, or type another one:",
+    "prompt_free": "Enter the correct label for this segment:",
+    "placeholder": "Correct label  (leave blank → \"unknown\")",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "unknown": "unknown"
+  },
+  "annotations": {
+    "label": "Annotation table",
+    "rows": "{count} row(s) added → {path}",
+    "off": "off",
+    "no_path": "no file path set — nothing will be written",
+    "read_error": "could not read segment_sources.csv: {error}",
+    "norec": "{count} row(s) with no source recording: {why}; re-run Step 5 to rebuild it",
+    "why_missing": "segment_sources.csv was not found in the segments folder",
+    "why_unlisted": "those clips are not listed in segment_sources.csv",
+    "multi_without_table": "Multiple labels are on but the annotation table is off — the labels are recorded only in the file names."
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "prev": "Previous segment",
+    "next": "Next segment",
+    "true": "Mark as true",
+    "false": "Mark as false",
+    "play": "Play / pause audio",
+    "confirm": "Confirm the label being typed",
+    "cancel": "Cancel",
+    "close": "Close"
+  },
+  "errors": {
+    "network": "Could not reach the reviewer server.",
+    "move": "Could not move the segment: {error}",
+    "unauthorized": "Wrong or missing access token."
+  },
+  "cli": {
+    "folder": "Segments folder",
+    "pending": "Pending review",
+    "already_true": "Already true",
+    "already_false": "Already false",
+    "already_multi": "Already multi",
+    "labels": "Label list",
+    "labels_none": "none (free text only)",
+    "multi": "Multiple labels",
+    "on": "on",
+    "off": "off",
+    "annotations": "Annotation table",
+    "spec_type": "Spectrogram type",
+    "freq_range": "Freq range",
+    "db_floor": "dB floor",
+    "verdict_dirs": "Verdict folders",
+    "serving": "Reviewer running at",
+    "network_hint": "Reachable from other machines on this network / Tailscale.",
+    "token_hint": "Access token required — open the URL above, it already carries the token.",
+    "stop_hint": "Press Ctrl+C to stop."
+  }
+}

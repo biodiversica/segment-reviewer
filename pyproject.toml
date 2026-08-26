@@ -1,0 +1,51 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "segment-reviewer"
+version = "0.1.0"
+description = "Browser GUI to review extracted bioacoustic audio segments (Step 6 of the vector-search notebooks), over a local folder or SSH/SFTP."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [{ name = "Biodiversica" }]
+keywords = ["bioacoustics", "audio", "spectrogram", "annotation", "review", "sftp"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Multimedia :: Sound/Audio :: Analysis",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+    "librosa>=0.10",
+    "soundfile>=0.12",
+    "matplotlib>=3.7",
+    "numpy>=1.24",
+    "typer>=0.12",
+    "paramiko>=3.4",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "httpx>=0.27"]
+
+[project.urls]
+Homepage = "https://github.com/biodiversica/segment-reviewer"
+Issues = "https://github.com/biodiversica/segment-reviewer/issues"
+
+[project.scripts]
+segment-reviewer = "segment_reviewer.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/segment_reviewer"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/segment_reviewer", "tests", "README.md", "README.pt-BR.md", "LICENSE"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

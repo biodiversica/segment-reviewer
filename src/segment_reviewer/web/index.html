@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Segment Reviewer</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🎧</text></svg>">
+</head>
+<body>
+  <header class="bar">
+    <div class="bar-left">
+      <span class="logo">🎧</span>
+      <span class="app-title" data-i18n="app.title">Segment Reviewer</span>
+      <span class="folder" id="folder" title=""></span>
+    </div>
+    <div class="bar-right">
+      <span class="counts" id="counts"></span>
+      <button class="icon-btn" id="btn-rescan" data-i18n-title="toolbar.rescan_hint">⟳</button>
+      <button class="icon-btn" id="btn-help" data-i18n-title="toolbar.help">?</button>
+      <select id="lang-select" data-i18n-title="toolbar.language" class="lang"></select>
+    </div>
+  </header>
+
+  <main>
+    <div id="progress" class="progress"></div>
+    <div id="meta" class="meta"></div>
+
+    <section id="controls" class="controls">
+      <label><span data-i18n="spec.type">Type:</span>
+        <select id="spec-type">
+          <option value="mel" data-i18n="spec.mel">Mel</option>
+          <option value="fft" data-i18n="spec.fft">FFT (linear)</option>
+        </select>
+      </label>
+      <label><span data-i18n="spec.fmin">Min Hz:</span>
+        <input id="spec-fmin" type="number" min="0" max="96000" step="100" value="0">
+      </label>
+      <label><span data-i18n="spec.fmax">Max Hz:</span>
+        <input id="spec-fmax" type="number" min="0" max="96000" step="100" value="0">
+      </label>
+      <label><span data-i18n="spec.db">dB floor:</span>
+        <input id="spec-db" type="number" min="-120" max="-20" step="5" value="-80">
+      </label>
+      <span class="hint" data-i18n="spec.nyquist">(Max Hz = 0 → Nyquist)</span>
+    </section>
+
+    <figure class="spec-wrap" id="spec-wrap">
+      <img id="spec" alt="">
+      <div class="spec-overlay" id="spec-loading" data-i18n="spec.loading"></div>
+    </figure>
+
+    <audio id="player" controls preload="auto"></audio>
+    <div id="error" class="error"></div>
+
+    <div id="multi-row" class="row hidden">
+      <span class="row-label" data-i18n="labels.row">Labels:</span>
+      <select id="multi-pick" class="pick"></select>
+      <input id="multi-input" type="text" class="text" data-i18n-ph="labels.placeholder">
+    </div>
+
+    <div id="nav-row" class="row nav">
+      <button id="btn-prev" class="btn" data-i18n="nav.prev">← Prev</button>
+      <button id="btn-true" class="btn ok" data-i18n="nav.true">✔ True</button>
+      <button id="btn-false" class="btn no" data-i18n="nav.false">✘ False</button>
+      <button id="btn-next" class="btn" data-i18n="nav.next">Next →</button>
+    </div>
+
+    <div id="false-row" class="false-row hidden">
+      <div class="prompt" id="false-prompt"></div>
+      <div class="row">
+        <select id="false-pick" class="pick"></select>
+        <input id="false-input" type="text" class="text" data-i18n-ph="false_row.placeholder">
+        <button id="btn-confirm" class="btn warn" data-i18n="false_row.confirm">Confirm</button>
+        <button id="btn-cancel" class="btn" data-i18n="false_row.cancel">Cancel</button>
+      </div>
+    </div>
+
+    <div id="ann" class="ann"></div>
+  </main>
+
+  <dialog id="help-dialog">
+    <h2 data-i18n="shortcuts.title">Keyboard shortcuts</h2>
+    <dl class="keys">
+      <dt><kbd>←</kbd></dt><dd data-i18n="shortcuts.prev"></dd>
+      <dt><kbd>→</kbd></dt><dd data-i18n="shortcuts.next"></dd>
+      <dt><kbd>T</kbd></dt><dd data-i18n="shortcuts.true"></dd>
+      <dt><kbd>F</kbd></dt><dd data-i18n="shortcuts.false"></dd>
+      <dt><kbd>Space</kbd></dt><dd data-i18n="shortcuts.play"></dd>
+      <dt><kbd>Enter</kbd></dt><dd data-i18n="shortcuts.confirm"></dd>
+      <dt><kbd>Esc</kbd></dt><dd data-i18n="shortcuts.cancel"></dd>
+    </dl>
+    <form method="dialog"><button class="btn" data-i18n="shortcuts.close">Close</button></form>
+  </dialog>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+{
+  "meta": { "name": "Português (Brasil)", "code": "pt-BR" },
+  "app": {
+    "title": "Revisor de Segmentos",
+    "subtitle": "Revisar segmentos extraídos"
+  },
+  "toolbar": {
+    "folder": "Pasta de segmentos",
+    "language": "Idioma",
+    "rescan": "Reler pasta",
+    "rescan_hint": "Relê a pasta e refaz a lista de pendentes",
+    "help": "Atalhos de teclado",
+    "settings": "Configurações"
+  },
+  "progress": {
+    "segment": "Segmento <b>{index}</b> de <b>{total}</b>",
+    "done": "✔  Todos os segmentos foram revisados.",
+    "empty": "Nenhum segmento aguardando revisão nesta pasta.",
+    "counts": "{pending} pendente(s) · {true} verdadeiro(s) · {false} falso(s) · {multi} múltiplo(s)"
+  },
+  "meta_row": {
+    "score": "escore",
+    "site": "ponto",
+    "date": "data",
+    "unknown": "?"
+  },
+  "spec": {
+    "type": "Tipo:",
+    "mel": "Mel",
+    "fft": "FFT (linear)",
+    "fmin": "Hz mín:",
+    "fmax": "Hz máx:",
+    "db": "Valor mínimo dB:",
+    "nyquist": "(Hz máx = 0 → Nyquist)",
+    "error": "Erro no espectrograma: {error}",
+    "loading": "Gerando espectrograma…"
+  },
+  "audio": {
+    "error": "Erro de áudio: {error}",
+    "unsupported": "Seu navegador não consegue tocar este arquivo."
+  },
+  "nav": {
+    "prev": "← Anterior",
+    "true": "✔  Verdadeiro",
+    "false": "✘  Falso",
+    "next": "Próximo →"
+  },
+  "labels": {
+    "row": "Rótulos:",
+    "placeholder": "Rótulo(s) deste segmento, separados por vírgulas",
+    "pick": "— escolha da lista —"
+  },
+  "false_row": {
+    "prompt_list": "Escolha o rótulo correto para este segmento, ou digite outro:",
+    "prompt_free": "Insira o rótulo correto para este segmento:",
+    "placeholder": "Rótulo correto  (deixe em branco → \"desconhecido\")",
+    "confirm": "Confirmar",
+    "cancel": "Cancelar",
+    "unknown": "desconhecido"
+  },
+  "annotations": {
+    "label": "Tabela de anotações",
+    "rows": "{count} linha(s) adicionada(s) → {path}",
+    "off": "desligada",
+    "no_path": "nenhum caminho definido — nada será salvo",
+    "read_error": "não foi possível ler segment_sources.csv: {error}",
+    "norec": "{count} linha(s) sem gravação de origem: {why}; execute a Parte 5 de novo para regerá-lo",
+    "why_missing": "o segment_sources.csv não foi encontrado na pasta de segmentos",
+    "why_unlisted": "esses clipes não estão listados no segment_sources.csv",
+    "multi_without_table": "Múltiplos rótulos está ligado, mas a tabela de anotações está desligada — os rótulos ficam registrados só nos nomes dos arquivos."
+  },
+  "shortcuts": {
+    "title": "Atalhos de teclado",
+    "prev": "Segmento anterior",
+    "next": "Próximo segmento",
+    "true": "Marcar como verdadeiro",
+    "false": "Marcar como falso",
+    "play": "Tocar / pausar o áudio",
+    "confirm": "Confirmar o rótulo digitado",
+    "cancel": "Cancelar",
+    "close": "Fechar"
+  },
+  "errors": {
+    "network": "Não foi possível falar com o servidor do revisor.",
+    "move": "Não foi possível mover o segmento: {error}",
+    "unauthorized": "Token de acesso ausente ou incorreto."
+  },
+  "cli": {
+    "folder": "Pasta de segmentos",
+    "pending": "Pendentes de revisão",
+    "already_true": "Já verdadeiros",
+    "already_false": "Já falsos",
+    "already_multi": "Já múltiplos",
+    "labels": "Lista de rótulos",
+    "labels_none": "nenhuma (só texto livre)",
+    "multi": "Múltiplos rótulos",
+    "on": "ligado",
+    "off": "desligado",
+    "annotations": "Tabela de anotações",
+    "spec_type": "Tipo de espectrograma",
+    "freq_range": "Faixa de frequência",
+    "db_floor": "Valor mínimo em dB",
+    "verdict_dirs": "Pastas de veredito",
+    "serving": "Revisor rodando em",
+    "network_hint": "Acessível de outras máquinas nesta rede / Tailscale.",
+    "token_hint": "É preciso token de acesso — abra a URL acima, ela já leva o token.",
+    "stop_hint": "Pressione Ctrl+C para parar."
+  }
+}
