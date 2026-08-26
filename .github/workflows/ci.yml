@@ -7,6 +7,7 @@ on:
 
 jobs:
   test:
+    name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -14,10 +15,66 @@ jobs:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
+
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
+
+      # Node runs the browser client's DOM-free helpers in tests/test_web_lib.py.
+      # Without it those tests skip themselves and the client goes uncovered.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # A real virtual environment on the matrix interpreter, which uv downloads
+      # if the runner does not already have it. Installing with --system instead
+      # would target the runner's Debian-managed /usr — refused under PEP 668,
+      # and the same interpreter for every entry in the matrix.
+      - name: Create the environment
+        run: uv venv --python ${{ matrix.python-version }}
+
       - name: Install
-        run: uv pip install --system -e ".[dev]"
+        run: uv pip install -e ".[dev]"
+
       - name: Test
-        run: python -m pytest -q
+        run: .venv/bin/python -m pytest -q
+
+  # The READMEs document a plain-pip route as well, so it is worth one job.
+  pip-install:
+    name: pip install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install into a venv with pip
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install -e ".[dev]"
+      - name: Test
+        run: .venv/bin/python -m pytest -q
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Build the wheel and sdist
+        run: uv build
+      - name: Check the wheel carries the GUI and the locales
+        run: |
+          uv run --no-project --with wheel python - <<'PY'
+          import zipfile, glob
+          names = zipfile.ZipFile(glob.glob("dist/*.whl")[0]).namelist()
+          need = ["web/index.html", "web/app.js", "web/lib.js", "web/styles.css",
+                  "locales/en.json", "locales/pt-BR.json"]
+          missing = [n for n in need if not any(x.endswith(n) for x in names)]
+          assert not missing, f"missing from the wheel: {missing}"
+          print("wheel contents OK")
+          PY
