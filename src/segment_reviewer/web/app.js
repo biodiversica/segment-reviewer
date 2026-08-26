@@ -66,20 +66,7 @@
   const post = (path, body) => api(path, { method: 'POST', body: JSON.stringify(body || {}) });
 
   // ── label helpers ─────────────────────────────────────────────────────────
-  function splitLabels(text) {
-    const out = [];
-    for (const raw of String(text || '').split(',')) {
-      const part = raw.trim();
-      if (part && !out.includes(part)) out.push(part);
-    }
-    return out;
-  }
-
-  const addLabel = (current, extra) => {
-    const labels = splitLabels(current);
-    if (!labels.includes(extra)) labels.push(extra);
-    return labels.join(', ');
-  };
+  const { splitLabels, addLabel, spectrogramUrl, audioUrl } = window.SegRev;
 
   function fillPicker(select, labels) {
     select.innerHTML = '';
@@ -91,27 +78,18 @@
   }
 
   // ── rendering ─────────────────────────────────────────────────────────────
-  function specParams(index) {
-    const q = new URLSearchParams({
-      index: String(index),
-      type: el.specType.value,
-      fmin: String(clamp(el.specFmin.value, 0, 96000, 0)),
-      fmax: String(clamp(el.specFmax.value, 0, 96000, 0)),
-      db: String(clamp(el.specDb.value, -120, -20, -80)),
-    });
-    return `/api/spectrogram?${q.toString()}`;
-  }
-
-  function clamp(value, lo, hi, fallback) {
-    const n = Number.parseInt(value, 10);
-    if (Number.isNaN(n)) return fallback;
-    return Math.min(hi, Math.max(lo, n));
-  }
+  const specView = () => ({
+    type: el.specType.value,
+    fmin: el.specFmin.value,
+    fmax: el.specFmax.value,
+    db: el.specDb.value,
+  });
 
   function loadSpectrogram() {
     const seg = app.state.segment;
     if (!seg) return;
     const token = ++app.specToken;
+    const url = spectrogramUrl(seg, specView());
     el.specWrap.classList.add('loading');
     const img = new Image();
     img.onload = () => {
@@ -125,18 +103,18 @@
       el.spec.removeAttribute('src');
       // The PNG endpoint answers errors as JSON; ask again to show the reason.
       try {
-        await api(specParams(seg.index));
+        await api(url);
       } catch (err) {
         el.error.textContent = t('spec.error', { error: err.message });
       }
     };
-    img.src = specParams(seg.index);
+    img.src = url;
   }
 
   function loadAudio() {
     const seg = app.state.segment;
     if (!seg) { el.player.removeAttribute('src'); el.player.load(); return; }
-    el.player.src = `/api/audio?index=${seg.index}&v=${encodeURIComponent(seg.name)}`;
+    el.player.src = audioUrl(seg);
     el.player.load();
   }
 
