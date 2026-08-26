@@ -121,20 +121,24 @@ prints the address other machines should use.
 | --- | --- |
 | **Label buttons** | One button per label. Click to pick it for this segment; click again to drop it. The segment's own label starts selected, so accepting it is a single click. <kbd>1</kbd>…<kbd>9</kbd> hit the first nine. |
 | **✔ True** | The label is correct. The clip keeps its path, under `true/`. |
-| **✘ False** | Wrong. The selection clears — click the correct label(s), then **Confirm**. |
+| **✘ False** | Wrong. Filed under the same selection, in `false/` instead of `true/` — so pick the correct label(s) first, then press it. With nothing selected the clip goes to `false/unknown/`. |
 | **← Prev / Next →** | Browse without making a decision. |
 | **Type / Min Hz / Max Hz / dB floor** | Redraw the spectrogram instantly — mel, linear-Hz or log-Hz frequency axis. The audio player is not touched, so a clip keeps playing while you change the view. |
 | **✎** | Edit the label list itself: each button grows a **×** to drop it, and the box below adds a new one. Changes are saved to `labels.txt` in the segments folder. |
 | **⟳** | Re-read the folder, e.g. after more segments arrive. |
 | **Language** | Switch the interface between English and Português. |
 
+Both verdicts read the same selection — the buttons say *what* the clip is, and
+True or False only says which folder it lands in. Every segment is one pass:
+adjust the labels if they need adjusting, press a verdict, and the next clip is
+already on screen.
+
 Several labels can be given to one segment — two species singing at once — which
 is the default; `--no-multi-label` restricts each segment to one.
 
 Keyboard: <kbd>←</kbd> <kbd>→</kbd> to browse, <kbd>T</kbd> / <kbd>F</kbd> for
 true/false, <kbd>1</kbd>…<kbd>9</kbd> to toggle the first nine labels,
-<kbd>Space</kbd> to play or pause, <kbd>Enter</kbd> to confirm a correction,
-<kbd>Esc</kbd> to cancel.
+<kbd>Space</kbd> to play or pause.
 
 ### The label list
 

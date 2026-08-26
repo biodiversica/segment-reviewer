@@ -20,8 +20,7 @@
     labelsNote: $('labels-note'),
     navRow: $('nav-row'), btnPrev: $('btn-prev'), btnTrue: $('btn-true'),
     btnFalse: $('btn-false'), btnNext: $('btn-next'),
-    falseRow: $('false-row'), falsePrompt: $('false-prompt'),
-    btnConfirm: $('btn-confirm'), btnCancel: $('btn-cancel'),
+
     specType: $('spec-type'), specFmin: $('spec-fmin'), specFmax: $('spec-fmax'),
     specDb: $('spec-db'),
     btnRescan: $('btn-rescan'), btnHelp: $('btn-help'), help: $('help-dialog'),
@@ -33,8 +32,6 @@
     busy: false, specToken: 0,
     //: labels chosen for the segment on screen
     selection: [],
-    //: true while the reviewer is correcting a rejected segment
-    correcting: false,
     //: true while the label list itself is being edited
     managing: false,
   };
@@ -79,7 +76,7 @@
   // ── the label panel ───────────────────────────────────────────────────────
   function renderLabels() {
     const labels = buttonLabels(app.state.labels, app.selection);
-    el.labelsTitle.textContent = app.correcting ? t('labels.correct') : t('labels.selected');
+    el.labelsTitle.textContent = t('labels.selected');
     el.labelsPanel.classList.toggle('managing', app.managing);
     el.btnManage.classList.toggle('active', app.managing);
     el.btnManage.title = t(app.managing ? 'labels.manage_on' : 'labels.manage');
@@ -269,7 +266,6 @@
       el.player.pause();
       el.navRow.classList.add('hidden');
       el.labelsPanel.classList.add('hidden');
-      el.falseRow.classList.add('hidden');
       renderAnnotations(true);
       return;
     }
@@ -287,27 +283,16 @@
       // Start from the label the segment already carries: accepting it is then
       // a single click, and only a correction or a second species needs more.
       app.selection = seg.label ? [seg.label] : [];
-      app.correcting = false;
     }
-    setCorrecting(app.correcting);
+    el.labelsPanel.classList.remove('hidden');
+    el.navRow.classList.remove('hidden');
+    renderLabels();
 
     el.btnPrev.disabled = seg.index <= 0;
     el.btnNext.disabled = seg.index >= seg.total - 1;
 
     loadSpectrogram();
     if (reloadMedia) loadAudio();
-  }
-
-  /** Show the panel in either its normal or its "pick the correction" state. */
-  function setCorrecting(on) {
-    app.correcting = on;
-    // With multi-label off the panel is only needed while correcting, which is
-    // how the reviewer behaved before there was one.
-    el.labelsPanel.classList.toggle('hidden', !(app.multi || on));
-    el.falseRow.classList.toggle('hidden', !on);
-    el.navRow.classList.toggle('hidden', on);
-    el.falsePrompt.textContent = t('false_row.prompt_list');
-    renderLabels();
   }
 
   // ── actions ───────────────────────────────────────────────────────────────
@@ -326,35 +311,28 @@
 
   const nav = (delta) => run(() => post('/api/nav', { delta }));
 
-  /** The labels to file the current segment under. */
-  function chosenLabels() {
+  /** The labels to file the current segment under.
+
+   * The buttons are the whole answer for both verdicts: whatever is selected is
+   * what the clip is labelled, and True or False only decides which folder it
+   * lands in. Clearing the selection is how a rejection says "not this, and I
+   * cannot say what it is".
+   */
+  function chosenLabels(kind) {
     if (app.selection.length) return app.selection.slice();
     const seg = app.state.segment;
-    if (app.correcting) return [t('false_row.unknown')];
+    if (kind === 'false') return [t('labels.unknown')];
     return seg && seg.label ? [seg.label] : [];
   }
 
   function verdict(kind) {
     if (!app.state.segment) return;
-    const labels = chosenLabels();
-    app.correcting = false;
+    const labels = chosenLabels(kind);
     return run(() => post('/api/verdict', { verdict: kind, labels }));
   }
 
   const markTrue = () => verdict('true');
-
-  function startCorrection() {
-    if (!app.state.segment || app.correcting) return;
-    app.selection = [];        // the proposed label is what is being rejected
-    setCorrecting(true);
-    el.labelInput.focus();
-  }
-
-  function cancelCorrection() {
-    const seg = app.state.segment;
-    app.selection = seg && seg.label ? [seg.label] : [];
-    setCorrecting(false);
-  }
+  const markFalse = () => verdict('false');
 
   async function setLanguage(code, { persist = true } = {}) {
     const data = await api(`/api/i18n/${encodeURIComponent(code)}`);
@@ -370,9 +348,7 @@
   el.btnPrev.addEventListener('click', () => nav(-1));
   el.btnNext.addEventListener('click', () => nav(+1));
   el.btnTrue.addEventListener('click', markTrue);
-  el.btnFalse.addEventListener('click', startCorrection);
-  el.btnConfirm.addEventListener('click', () => verdict('false'));
-  el.btnCancel.addEventListener('click', cancelCorrection);
+  el.btnFalse.addEventListener('click', markFalse);
   el.btnRescan.addEventListener('click', () => run(() => post('/api/rescan')));
   el.btnHelp.addEventListener('click', () => el.help.showModal());
 
@@ -414,16 +390,11 @@
       if (label) { e.preventDefault(); pickLabel(label); }
       return;
     }
-    if (app.correcting && (e.key === 'Enter' || e.key === 'Escape')) {
-      e.preventDefault();
-      (e.key === 'Enter' ? verdict('false') : cancelCorrection)();
-      return;
-    }
     const keys = {
       ArrowLeft: () => nav(-1),
       ArrowRight: () => nav(+1),
       t: markTrue, T: markTrue,
-      f: startCorrection, F: startCorrection,
+      f: markFalse, F: markFalse,
     };
     const action = keys[e.key];
     if (action) { e.preventDefault(); action(); }

@@ -122,20 +122,24 @@ imprime o endereço que as outras máquinas devem usar.
 | --- | --- |
 | **Botões de rótulo** | Um botão por rótulo. Clique para marcá-lo neste segmento; clique de novo para desmarcar. O rótulo do próprio segmento já vem marcado, então aceitá-lo é um clique só. <kbd>1</kbd>…<kbd>9</kbd> acionam os nove primeiros. |
 | **✔ Verdadeiro** | O rótulo está certo. O clipe mantém seu caminho, sob `verdadeiro/`. |
-| **✘ Falso** | Errado. A seleção é limpa — clique no(s) rótulo(s) correto(s) e confirme. |
+| **✘ Falso** | Errado. Arquivado sob a mesma seleção, em `falso/` em vez de `verdadeiro/` — então marque o(s) rótulo(s) correto(s) antes de apertar. Sem nada marcado, o clipe vai para `falso/desconhecido/`. |
 | **← Anterior / Próximo →** | Navega sem decidir nada. |
 | **Tipo / Hz mín / Hz máx / dB** | Redesenha o espectrograma na hora — eixo de frequência em mel, em Hz linear ou em Hz logarítmico. O player de áudio não é afetado, então o clipe continua tocando enquanto você muda a visualização. |
 | **✎** | Edita a própria lista de rótulos: cada botão ganha um **×** para removê-lo, e a caixa abaixo adiciona um novo. As mudanças são salvas em `labels.txt`, na pasta de segmentos. |
 | **⟳** | Relê a pasta, por exemplo quando chegam mais segmentos. |
 | **Idioma** | Alterna a interface entre Português e Inglês. |
 
+Os dois vereditos leem a mesma seleção — os botões dizem *o que* o clipe é, e
+Verdadeiro ou Falso só diz em qual pasta ele cai. Cada segmento é uma passada só:
+ajuste os rótulos se for preciso, aperte um veredito, e o próximo clipe já está
+na tela.
+
 Um segmento pode receber vários rótulos — duas espécies cantando ao mesmo tempo —
 o que é o padrão; `--no-multi-label` limita cada segmento a um rótulo.
 
 Teclado: <kbd>←</kbd> <kbd>→</kbd> para navegar, <kbd>T</kbd> / <kbd>F</kbd> para
 verdadeiro/falso, <kbd>1</kbd>…<kbd>9</kbd> para marcar os nove primeiros
-rótulos, <kbd>Espaço</kbd> para tocar ou pausar, <kbd>Enter</kbd> para confirmar
-uma correção, <kbd>Esc</kbd> para cancelar.
+rótulos, <kbd>Espaço</kbd> para tocar ou pausar.
 
 ### A lista de rótulos
 

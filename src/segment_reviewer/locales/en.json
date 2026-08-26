@@ -46,7 +46,6 @@
   "labels": {
     "row": "Labels:",
     "selected": "Labels for this segment — click to toggle:",
-    "correct": "Correct label — click the right one:",
     "manage": "Add or remove labels from the list",
     "manage_on": "Done editing the list",
     "add": "Add",
@@ -55,12 +54,7 @@
     "empty": "No labels on the list yet — add one below.",
     "saved_to": "List saved to {path}",
     "not_saved": "List not saved: {error}",
-    "session_only": "List kept for this session only."
-  },
-  "false_row": {
-    "prompt_list": "Pick the correct label for this segment, or type another one:",
-    "confirm": "Confirm",
-    "cancel": "Cancel",
+    "session_only": "List kept for this session only.",
     "unknown": "unknown"
   },
   "annotations": {
@@ -79,8 +73,6 @@
     "true": "Mark as true",
     "false": "Mark as false",
     "play": "Play / pause audio",
-    "confirm": "Confirm the label being typed",
-    "cancel": "Cancel",
     "close": "Close",
     "labels": "Toggle the 1st…9th label"
   },

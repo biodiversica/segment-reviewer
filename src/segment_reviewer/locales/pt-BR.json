@@ -46,7 +46,6 @@
   "labels": {
     "row": "Rótulos:",
     "selected": "Rótulos deste segmento — clique para marcar:",
-    "correct": "Rótulo correto — clique no certo:",
     "manage": "Adicionar ou remover rótulos da lista",
     "manage_on": "Concluir a edição da lista",
     "add": "Adicionar",
@@ -55,12 +54,7 @@
     "empty": "Nenhum rótulo na lista ainda — adicione um abaixo.",
     "saved_to": "Lista salva em {path}",
     "not_saved": "Lista não salva: {error}",
-    "session_only": "Lista mantida só nesta sessão."
-  },
-  "false_row": {
-    "prompt_list": "Escolha o rótulo correto para este segmento, ou digite outro:",
-    "confirm": "Confirmar",
-    "cancel": "Cancelar",
+    "session_only": "Lista mantida só nesta sessão.",
     "unknown": "desconhecido"
   },
   "annotations": {
@@ -79,8 +73,6 @@
     "true": "Marcar como verdadeiro",
     "false": "Marcar como falso",
     "play": "Tocar / pausar o áudio",
-    "confirm": "Confirmar o rótulo digitado",
-    "cancel": "Cancelar",
     "close": "Fechar",
     "labels": "Marcar o 1º…9º rótulo"
   },
