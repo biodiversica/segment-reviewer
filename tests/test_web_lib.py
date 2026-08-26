@@ -73,6 +73,16 @@ def test_changing_a_spectrogram_setting_changes_the_url():
 
 
 @node
+def test_every_spectrogram_type_survives_the_client():
+    urls = run(f"""
+      const a = {json.dumps(SEG_A)};
+      console.log(JSON.stringify(lib.SPEC_TYPES.map(
+        t => lib.spectrogramUrl(a, Object.assign({{}}, {json.dumps(VIEW)}, {{type: t}})))));
+    """)
+    assert [u.split("type=")[1].split("&")[0] for u in urls] == ["mel", "fft", "log"]
+
+
+@node
 def test_out_of_range_and_junk_settings_fall_back():
     url = run("""
       console.log(JSON.stringify(lib.spectrogramUrl(

@@ -13,7 +13,7 @@ from pydantic import BaseModel
 from . import __version__, i18n
 from .config import ReviewConfig
 from .review import ReviewSession
-from .spectrogram import SpectrogramError
+from .spectrogram import SPEC_TYPES, SpectrogramError
 
 WEB_DIR = Path(__file__).parent / "web"
 TOKEN_COOKIE = "segrev_token"
@@ -193,7 +193,7 @@ def create_app(session: ReviewSession, config: ReviewConfig,
     @app.get("/api/spectrogram")
     async def spectrogram(
         index: int = Query(0, ge=0),
-        type: str = Query("mel", pattern="^(mel|fft)$"),
+        type: str = Query("mel", pattern=f"^({'|'.join(SPEC_TYPES)})$"),
         fmin: int = Query(0, ge=0, le=96000),
         fmax: int = Query(0, ge=0, le=96000),
         db: int = Query(-80, ge=-120, le=-20),

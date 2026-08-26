@@ -34,6 +34,7 @@
     "type": "Type:",
     "mel": "Mel",
     "fft": "FFT (linear)",
+    "log": "FFT (log)",
     "fmin": "Min Hz:",
     "fmax": "Max Hz:",
     "db": "dB floor:",

@@ -28,6 +28,11 @@ BLANK_PNG = bytes.fromhex(
     "ae426082"
 )
 
+#: Frequency axes on offer. "mel" is a mel-scaled power spectrogram; the other
+#: two are a linear STFT drawn against a linear ("fft") or logarithmic ("log")
+#: frequency axis.
+SPEC_TYPES = ("mel", "fft", "log")
+
 _RENDER_LOCK = threading.Lock()
 
 
@@ -56,7 +61,8 @@ def render(
 ) -> bytes:
     """Draw one clip as a PNG.
 
-    ``fmax_hz`` of 0 means the Nyquist frequency of the clip.
+    ``spec_type`` is one of :data:`SPEC_TYPES`; ``fmax_hz`` of 0 means the Nyquist
+    frequency of the clip.
     """
     try:
         y, sr = librosa.load(str(path), sr=None, mono=True)
@@ -81,10 +87,14 @@ def render(
                     fmin=fmin, fmax=fmax, vmin=db_min, vmax=0,
                 )
             else:
+                # "fft" and "log" are the same transform drawn against a linear
+                # or a logarithmic frequency axis. librosa's log axis is a symlog
+                # scale, so a lower bound of 0 Hz is fine on it.
                 D = librosa.stft(y)
                 Sd = librosa.amplitude_to_db(np.abs(D), ref=np.max)
                 img = librosa.display.specshow(
-                    Sd, sr=sr, x_axis="time", y_axis="hz", ax=ax,
+                    Sd, sr=sr, x_axis="time",
+                    y_axis="log" if spec_type == "log" else "hz", ax=ax,
                     vmin=db_min, vmax=0,
                 )
                 ax.set_ylim(fmin, fmax)

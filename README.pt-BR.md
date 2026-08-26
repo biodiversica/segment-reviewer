@@ -123,7 +123,7 @@ imprime o endereço que as outras máquinas devem usar.
 | **✔ Verdadeiro** | O rótulo está certo. O clipe mantém seu caminho, sob `verdadeiro/`. |
 | **✘ Falso** | Errado. Escolha ou digite o rótulo correto e clique em **Confirmar** — o clipe é arquivado sob esse rótulo. |
 | **← Anterior / Próximo →** | Navega sem decidir nada. |
-| **Tipo / Hz mín / Hz máx / dB** | Redesenha o espectrograma na hora. O player de áudio não é afetado, então o clipe continua tocando enquanto você muda a visualização. |
+| **Tipo / Hz mín / Hz máx / dB** | Redesenha o espectrograma na hora — eixo de frequência em mel, em Hz linear ou em Hz logarítmico. O player de áudio não é afetado, então o clipe continua tocando enquanto você muda a visualização. |
 | **Rótulos** (com `--multi-label`) | Dá vários rótulos a um segmento — duas espécies cantando ao mesmo tempo. Vem preenchido com o rótulo atual do segmento; a lista suspensa acrescenta em vez de substituir. |
 | **⟳** | Relê a pasta, por exemplo quando chegam mais segmentos. |
 | **Idioma** | Alterna a interface entre Português e Inglês. |
@@ -288,7 +288,8 @@ segment-reviewer SEGMENTOS [OPÇÕES]
       --annotations             Grava a tabela de anotações
       --annotations-path TEXT   Onde ela fica  [padrão: <SEGMENTOS>/annotations.csv]
 
-      --spec-type [mel|fft]     Tipo inicial do espectrograma  [padrão: mel]
+      --spec-type [mel|fft|log] Eixo de frequência inicial: escala mel, Hz linear ou
+                                Hz logarítmico  [padrão: mel]
       --fmin INTEGER            Frequência mínima inicial, Hz  [padrão: 0]
       --fmax INTEGER            Frequência máxima inicial, Hz; 0 = Nyquist  [padrão: 0]
       --db-floor INTEGER        Valor mínimo em dB inicial  [padrão: -80]

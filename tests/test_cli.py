@@ -53,3 +53,10 @@ def test_pattern_presets_say_whether_they_carry_a_label():
     assert _pattern_has_label("vector-search") is True
     assert _pattern_has_label(r"^(?P<label>\w+)_(?P<site>\w+)$") is True
     assert _pattern_has_label(r"^(?P<site>\w+)$") is False
+
+
+def test_every_spectrogram_type_is_accepted(tmp_path):
+    for spec_type in ("mel", "fft", "log"):
+        result = runner.invoke(cli, [str(tmp_path / "nope"), "--spec-type", spec_type])
+        # It gets past validation and fails on the missing folder instead.
+        assert result.exit_code == 2, spec_type

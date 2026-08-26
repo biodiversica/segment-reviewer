@@ -75,12 +75,30 @@ def test_audio_out_of_range_index(client):
     assert api.get("/api/audio?index=99").status_code == 404
 
 
-def test_spectrogram_renders_a_png(client):
+@pytest.mark.parametrize("spec_type", ["mel", "fft", "log"])
+def test_every_frequency_axis_renders_a_png(client, spec_type):
     api, _ = client
-    res = api.get("/api/spectrogram?index=0&type=mel&fmin=0&fmax=0&db=-80")
+    res = api.get(f"/api/spectrogram?index=0&type={spec_type}&fmin=0&fmax=0&db=-80")
     assert res.status_code == 200
     assert res.headers["content-type"] == "image/png"
     assert res.content.startswith(b"\x89PNG")
+
+
+def test_the_three_axes_draw_different_pictures(client):
+    api, _ = client
+    drawn = {
+        t: api.get(f"/api/spectrogram?index=0&type={t}&fmin=0&fmax=0&db=-80").content
+        for t in ("mel", "fft", "log")
+    }
+    assert len(set(drawn.values())) == 3
+
+
+@pytest.mark.parametrize("fmin, fmax", [(0, 0), (0, 8000), (200, 8000)])
+def test_a_log_axis_accepts_any_bound(client, fmin, fmax):
+    # librosa draws the log axis on a symlog scale, so 0 Hz is a valid bound too.
+    api, _ = client
+    res = api.get(f"/api/spectrogram?index=0&type=log&fmin={fmin}&fmax={fmax}&db=-80")
+    assert res.status_code == 200, res.text
 
 
 def test_spectrogram_rejects_a_bad_type(client):

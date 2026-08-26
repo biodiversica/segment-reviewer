@@ -122,7 +122,7 @@ prints the address other machines should use.
 | **✔ True** | The label is correct. The clip keeps its path, under `true/`. |
 | **✘ False** | Wrong. Pick or type the correct label, then **Confirm** — the clip is filed under that label instead. |
 | **← Prev / Next →** | Browse without making a decision. |
-| **Type / Min Hz / Max Hz / dB floor** | Redraw the spectrogram instantly. The audio player is not touched, so a clip keeps playing while you change the view. |
+| **Type / Min Hz / Max Hz / dB floor** | Redraw the spectrogram instantly — mel, linear-Hz or log-Hz frequency axis. The audio player is not touched, so a clip keeps playing while you change the view. |
 | **Labels** (with `--multi-label`) | Give one segment several labels — two species singing at once. Pre-filled with the segment's current label; the drop-down adds to it instead of replacing it. |
 | **⟳** | Re-read the folder, e.g. after more segments arrive. |
 | **Language** | Switch the interface between English and Português. |
@@ -285,7 +285,8 @@ segment-reviewer SEGMENTS [OPTIONS]
       --annotations             Write the annotation table
       --annotations-path TEXT   Where it lives  [default: <SEGMENTS>/annotations.csv]
 
-      --spec-type [mel|fft]     Initial spectrogram type  [default: mel]
+      --spec-type [mel|fft|log] Initial frequency axis: mel scale, linear Hz, or
+                                logarithmic Hz  [default: mel]
       --fmin INTEGER            Initial minimum frequency, Hz  [default: 0]
       --fmax INTEGER            Initial maximum frequency, Hz; 0 = Nyquist  [default: 0]
       --db-floor INTEGER        Initial dB floor  [default: -80]

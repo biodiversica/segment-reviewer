@@ -6,6 +6,9 @@
 (function (root) {
   'use strict';
 
+  /** Frequency axes the server can draw; anything else falls back to the first. */
+  const SPEC_TYPES = ['mel', 'fft', 'log'];
+
   /** Split a comma-separated label box into a clean list, keeping the order. */
   function splitLabels(text) {
     const out = [];
@@ -43,7 +46,7 @@
   function spectrogramUrl(segment, view) {
     const query = new URLSearchParams({
       index: String(segment.index),
-      type: view.type === 'fft' ? 'fft' : 'mel',
+      type: SPEC_TYPES.includes(view.type) ? view.type : SPEC_TYPES[0],
       fmin: String(clampInt(view.fmin, 0, 96000, 0)),
       fmax: String(clampInt(view.fmax, 0, 96000, 0)),
       db: String(clampInt(view.db, -120, -20, -80)),
@@ -61,7 +64,7 @@
     return `/api/audio?${query.toString()}`;
   }
 
-  const lib = { splitLabels, addLabel, clampInt, mediaKey, spectrogramUrl, audioUrl };
+  const lib = { SPEC_TYPES, splitLabels, addLabel, clampInt, mediaKey, spectrogramUrl, audioUrl };
   if (typeof module === 'object' && module.exports) module.exports = lib;
   else root.SegRev = lib;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

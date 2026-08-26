@@ -20,6 +20,7 @@ from .config import ReviewConfig
 from .naming import DEFAULT_DATETIME_FORMAT, LABEL_SOURCES, PRESETS
 from .review import ReviewSession
 from .server import create_app
+from .spectrogram import SPEC_TYPES
 from .storage import open_backend
 
 cli = typer.Typer(
@@ -149,7 +150,11 @@ def review(
         help="Where that table lives. Relative paths are inside the segments folder. "
              "[default: <segments>/annotations.csv]",
     ),
-    spec_type: str = typer.Option("mel", "--spec-type", help="Initial spectrogram type: mel or fft."),
+    spec_type: str = typer.Option(
+        "mel", "--spec-type",
+        help="Initial spectrogram type: 'mel' (mel scale), 'fft' (linear Hz) or "
+             "'log' (logarithmic Hz).",
+    ),
     fmin: int = typer.Option(0, "--fmin", min=0, max=96000, help="Initial minimum frequency, in Hz."),
     fmax: int = typer.Option(0, "--fmax", min=0, max=96000, help="Initial maximum frequency in Hz; 0 = Nyquist."),
     db_floor: int = typer.Option(-80, "--db-floor", min=-120, max=-20, help="Initial dB floor of the colour scale."),
@@ -194,8 +199,10 @@ def review(
     ),
 ) -> None:
     """Open SEGMENTS in the browser reviewer."""
-    if spec_type not in ("mel", "fft"):
-        raise typer.BadParameter("must be 'mel' or 'fft'", param_hint="--spec-type")
+    if spec_type not in SPEC_TYPES:
+        raise typer.BadParameter(
+            f"must be one of {', '.join(SPEC_TYPES)}", param_hint="--spec-type"
+        )
     if label_from is not None and label_from not in LABEL_SOURCES:
         raise typer.BadParameter(
             f"must be one of {', '.join(LABEL_SOURCES)}", param_hint="--label-from"
