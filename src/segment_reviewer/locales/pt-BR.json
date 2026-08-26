@@ -4,16 +4,12 @@
     "code": "pt-BR"
   },
   "app": {
-    "title": "Revisor de Segmentos",
-    "subtitle": "Revisar segmentos extraídos"
+    "title": "Revisor de Segmentos"
   },
   "toolbar": {
-    "folder": "Pasta de segmentos",
     "language": "Idioma",
-    "rescan": "Reler pasta",
     "rescan_hint": "Relê a pasta e refaz a lista de pendentes",
-    "help": "Atalhos de teclado",
-    "settings": "Configurações"
+    "help": "Atalhos de teclado"
   },
   "progress": {
     "segment": "Segmento <b>{index}</b> de <b>{total}</b>",
@@ -25,7 +21,6 @@
     "score": "escore",
     "site": "ponto",
     "date": "data",
-    "unknown": "?",
     "folder": "pasta",
     "extra": "extra",
     "no_label": "sem rótulo"
@@ -42,10 +37,6 @@
     "error": "Erro no espectrograma: {error}",
     "loading": "Gerando espectrograma…"
   },
-  "audio": {
-    "error": "Erro de áudio: {error}",
-    "unsupported": "Seu navegador não consegue tocar este arquivo."
-  },
   "nav": {
     "prev": "← Anterior",
     "true": "✔  Verdadeiro",
@@ -54,13 +45,20 @@
   },
   "labels": {
     "row": "Rótulos:",
-    "placeholder": "Rótulo(s) deste segmento, separados por vírgulas",
-    "pick": "— escolha da lista —"
+    "selected": "Rótulos deste segmento — clique para marcar:",
+    "correct": "Rótulo correto — clique no certo:",
+    "manage": "Adicionar ou remover rótulos da lista",
+    "manage_on": "Concluir a edição da lista",
+    "add": "Adicionar",
+    "add_placeholder": "Novo rótulo",
+    "remove": "Remover “{label}” da lista",
+    "empty": "Nenhum rótulo na lista ainda — adicione um abaixo.",
+    "saved_to": "Lista salva em {path}",
+    "not_saved": "Lista não salva: {error}",
+    "session_only": "Lista mantida só nesta sessão."
   },
   "false_row": {
     "prompt_list": "Escolha o rótulo correto para este segmento, ou digite outro:",
-    "prompt_free": "Insira o rótulo correto para este segmento:",
-    "placeholder": "Rótulo correto  (deixe em branco → \"desconhecido\")",
     "confirm": "Confirmar",
     "cancel": "Cancelar",
     "unknown": "desconhecido"
@@ -68,13 +66,11 @@
   "annotations": {
     "label": "Tabela de anotações",
     "rows": "{count} linha(s) adicionada(s) → {path}",
-    "off": "desligada",
     "no_path": "nenhum caminho definido — nada será salvo",
     "read_error": "não foi possível ler segment_sources.csv: {error}",
     "norec": "{count} linha(s) sem gravação de origem: {why}",
     "why_missing": "não há segment_sources.csv na pasta de segmentos",
-    "why_unlisted": "esses clipes não estão listados no segment_sources.csv",
-    "multi_without_table": "Múltiplos rótulos está ligado, mas a tabela de anotações está desligada — os rótulos ficam registrados só nos nomes dos arquivos."
+    "why_unlisted": "esses clipes não estão listados no segment_sources.csv"
   },
   "shortcuts": {
     "title": "Atalhos de teclado",
@@ -85,11 +81,11 @@
     "play": "Tocar / pausar o áudio",
     "confirm": "Confirmar o rótulo digitado",
     "cancel": "Cancelar",
-    "close": "Fechar"
+    "close": "Fechar",
+    "labels": "Marcar o 1º…9º rótulo"
   },
   "errors": {
     "network": "Não foi possível falar com o servidor do revisor.",
-    "move": "Não foi possível mover o segmento: {error}",
     "unauthorized": "Token de acesso ausente ou incorreto."
   },
   "cli": {
@@ -113,6 +109,7 @@
     "token_hint": "É preciso token de acesso — abra a URL acima, ela já leva o token.",
     "stop_hint": "Pressione Ctrl+C para parar.",
     "label_from": "Origem do rótulo",
-    "pattern": "Padrão do nome"
+    "pattern": "Padrão do nome",
+    "labels_file": "Arquivo da lista"
   }
 }

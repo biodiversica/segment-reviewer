@@ -16,7 +16,7 @@ import typer
 import uvicorn
 
 from . import __version__, i18n
-from .config import ReviewConfig
+from .config import DEFAULT_LABELS_FILE, ReviewConfig
 from .naming import DEFAULT_DATETIME_FORMAT, LABEL_SOURCES, PRESETS
 from .review import ReviewSession
 from .server import create_app
@@ -92,7 +92,9 @@ def _summary(session: ReviewSession, config: ReviewConfig, t) -> str:
         (t("cli.already_multi"), str(counts["multi"])),
         (t("cli.label_from"), config.label_from),
         (t("cli.pattern"), config.filename_pattern),
-        (t("cli.labels"), ", ".join(config.labels) if config.labels else t("cli.labels_none")),
+        (t("cli.labels"), ", ".join(session.label_choices()) or t("cli.labels_none")),
+        (t("cli.labels_file"),
+         session.labels.path if session.labels.persisted else t("cli.off")),
         (t("cli.multi"), t("cli.on") if config.multi_label else t("cli.off")),
         (t("cli.annotations"),
          session.annotations.state.path if session.annotations.enabled else t("cli.off")),
@@ -138,8 +140,18 @@ def review(
         help="strptime format for the date and time captured from a file name.",
     ),
     multi_label: bool = typer.Option(
-        False, "--multi-label/--no-multi-label",
-        help="Allow several labels per segment; such clips are filed under multi/.",
+        True, "--multi-label/--no-multi-label",
+        help="Allow several labels per segment; such clips are filed under multi/. "
+             "On by default; --no-multi-label restricts each segment to one label.",
+    ),
+    labels_file: Optional[str] = typer.Option(
+        None, "--labels-file",
+        help="Where the editable label list is kept, one label per line. Relative "
+             "paths are inside the segments folder.  [default: <SEGMENTS>/labels.txt]",
+    ),
+    no_labels_file: bool = typer.Option(
+        False, "--no-labels-file",
+        help="Do not read or write a label list file; edits last for this session only.",
     ),
     annotations: bool = typer.Option(
         False, "--annotations/--no-annotations",
@@ -230,6 +242,8 @@ def review(
         segments=segments,
         lang=language,
         labels=[x.strip() for x in labels.split(",") if x.strip()],
+        labels_file="" if no_labels_file else (labels_file or DEFAULT_LABELS_FILE),
+        persist_labels=not no_labels_file,
         label_from=label_from,
         filename_pattern=filename_pattern,
         datetime_format=datetime_format,

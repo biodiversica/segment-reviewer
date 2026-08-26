@@ -236,3 +236,97 @@ kbd {
   font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
   background: var(--bg);
 }
+
+/* ── label panel ─────────────────────────────────────────────────────────── */
+.labels-panel {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.labels-head { display: flex; align-items: center; gap: 8px; }
+.labels-head .row-label { font-size: 13px; }
+
+.label-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+}
+
+/* One chip = one label. The pick half is the fast target; the drop half only
+   appears while the list is being edited, so a mis-click cannot delete a label
+   during a review. */
+.chip {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--bg);
+}
+.chip-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  padding: 7px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.chip-pick kbd {
+  font-size: 10px;
+  padding: 0 4px;
+  opacity: .6;
+  border-bottom-width: 1px;
+}
+.chip:hover { border-color: var(--accent); }
+.chip.on { background: var(--ok); border-color: var(--ok); }
+.chip.on .chip-pick { color: var(--ok-ink); font-weight: 600; }
+.chip.on .chip-pick kbd {
+  background: transparent;
+  border-color: color-mix(in srgb, var(--ok-ink) 45%, transparent);
+  color: var(--ok-ink);
+  opacity: .85;
+}
+
+.chip-drop {
+  display: none;
+  border: 0;
+  border-left: 1px solid var(--line);
+  background: transparent;
+  color: var(--no);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0 10px;
+  cursor: pointer;
+}
+.labels-panel.managing .chip-drop { display: inline-flex; align-items: center; }
+.chip-drop:hover { background: var(--no); color: var(--no-ink); }
+
+.labels-add { gap: 6px; }
+.labels-add .text { max-width: 260px; flex: 0 1 260px; }
+.btn.small, .icon-btn.small {
+  min-width: 0;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+.icon-btn.small { padding: 3px 8px; }
+.icon-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+.labels-note { font-size: 12px; color: var(--muted); text-align: center; min-height: 1em; }
+.labels-note .bad { color: var(--no); }
+
+.false-row { gap: 8px; }
+.false-row .prompt { margin-right: 4px; }

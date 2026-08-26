@@ -19,7 +19,7 @@ def test_bootstrap_carries_everything_the_gui_needs(client):
     assert data["state"]["segment"]["label"] == "BOAALB"
     assert data["state"]["segment"]["folder"] == "POCA/BOAALB"
     assert data["state"]["counts"]["pending"] == 3
-    assert data["state"]["labels"][0] == "rain"
+    assert data["state"]["labels"] == ["rain", "BOAALB", "PHYLUT"]
 
 
 def test_index_page_is_served(client):
@@ -116,3 +116,34 @@ def test_token_guards_the_api(segments_dir):
     landing = api.get("/?token=s3cret", follow_redirects=False)
     assert landing.status_code == 303
     assert api.get("/api/state").status_code == 200
+
+
+# ── the editable label list over HTTP ────────────────────────────────────────
+def test_labels_endpoint_reports_the_list_and_where_it_lives(client):
+    api, _ = client
+    data = api.get("/api/labels").json()
+    assert data["labels"] == ["rain", "BOAALB", "PHYLUT"]
+    assert data["persisted"] is True
+    assert data["path"].endswith("labels.txt")
+
+
+def test_adding_and_removing_labels_from_the_gui(client, segments_dir):
+    api, _ = client
+    assert api.post("/api/labels", json={"add": "TURDRU"}).json()["labels"][-1] == "TURDRU"
+    data = api.post("/api/labels", json={"remove": "rain"}).json()
+    assert data["labels"] == ["BOAALB", "PHYLUT", "TURDRU"]
+    # The edit is on disk, so the next session starts from it.
+    assert (segments_dir / "labels.txt").read_text().split() == ["BOAALB", "PHYLUT", "TURDRU"]
+    # The reply carries the fresh state, so the buttons redraw in one round trip.
+    assert data["state"]["labels"] == data["labels"]
+
+
+def test_replacing_the_list_from_the_gui(client):
+    api, _ = client
+    data = api.post("/api/labels", json={"labels": [" chuva ", "rain", "chuva", ""]}).json()
+    assert data["labels"] == ["chuva", "rain"]
+
+
+def test_multi_label_is_advertised_as_on(client):
+    api, _ = client
+    assert api.get("/api/bootstrap").json()["multi_label"] is True

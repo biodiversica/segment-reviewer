@@ -4,16 +4,12 @@
     "code": "en"
   },
   "app": {
-    "title": "Segment Reviewer",
-    "subtitle": "Review extracted segments"
+    "title": "Segment Reviewer"
   },
   "toolbar": {
-    "folder": "Segments folder",
     "language": "Language",
-    "rescan": "Rescan folder",
     "rescan_hint": "Re-read the folder and rebuild the pending list",
-    "help": "Keyboard shortcuts",
-    "settings": "Settings"
+    "help": "Keyboard shortcuts"
   },
   "progress": {
     "segment": "Segment <b>{index}</b> of <b>{total}</b>",
@@ -25,7 +21,6 @@
     "score": "score",
     "site": "site",
     "date": "date",
-    "unknown": "?",
     "folder": "folder",
     "extra": "extra",
     "no_label": "no label"
@@ -42,10 +37,6 @@
     "error": "Spectrogram error: {error}",
     "loading": "Rendering spectrogram…"
   },
-  "audio": {
-    "error": "Audio error: {error}",
-    "unsupported": "Your browser cannot play this file."
-  },
   "nav": {
     "prev": "← Prev",
     "true": "✔  True",
@@ -54,13 +45,20 @@
   },
   "labels": {
     "row": "Labels:",
-    "placeholder": "Label(s) for this segment, separated by commas",
-    "pick": "— pick from list —"
+    "selected": "Labels for this segment — click to toggle:",
+    "correct": "Correct label — click the right one:",
+    "manage": "Add or remove labels from the list",
+    "manage_on": "Done editing the list",
+    "add": "Add",
+    "add_placeholder": "New label",
+    "remove": "Remove “{label}” from the list",
+    "empty": "No labels on the list yet — add one below.",
+    "saved_to": "List saved to {path}",
+    "not_saved": "List not saved: {error}",
+    "session_only": "List kept for this session only."
   },
   "false_row": {
     "prompt_list": "Pick the correct label for this segment, or type another one:",
-    "prompt_free": "Enter the correct label for this segment:",
-    "placeholder": "Correct label  (leave blank → \"unknown\")",
     "confirm": "Confirm",
     "cancel": "Cancel",
     "unknown": "unknown"
@@ -68,13 +66,11 @@
   "annotations": {
     "label": "Annotation table",
     "rows": "{count} row(s) added → {path}",
-    "off": "off",
     "no_path": "no file path set — nothing will be written",
     "read_error": "could not read segment_sources.csv: {error}",
     "norec": "{count} row(s) with no source recording: {why}",
     "why_missing": "there is no segment_sources.csv in the segments folder",
-    "why_unlisted": "those clips are not listed in segment_sources.csv",
-    "multi_without_table": "Multiple labels are on but the annotation table is off — the labels are recorded only in the file names."
+    "why_unlisted": "those clips are not listed in segment_sources.csv"
   },
   "shortcuts": {
     "title": "Keyboard shortcuts",
@@ -85,11 +81,11 @@
     "play": "Play / pause audio",
     "confirm": "Confirm the label being typed",
     "cancel": "Cancel",
-    "close": "Close"
+    "close": "Close",
+    "labels": "Toggle the 1st…9th label"
   },
   "errors": {
     "network": "Could not reach the reviewer server.",
-    "move": "Could not move the segment: {error}",
     "unauthorized": "Wrong or missing access token."
   },
   "cli": {
@@ -113,6 +109,7 @@
     "token_hint": "Access token required — open the URL above, it already carries the token.",
     "stop_hint": "Press Ctrl+C to stop.",
     "label_from": "Label source",
-    "pattern": "Filename pattern"
+    "pattern": "Filename pattern",
+    "labels_file": "Label list file"
   }
 }

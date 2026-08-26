@@ -162,7 +162,10 @@ def test_rescan_keeps_the_current_segment(session, segments_dir):
     session.rescan()
     assert session.view().name == current
     assert len(session.segments) == 4
-    assert "NEW" in session.label_choices()
+    # A rescan finds the new folder's label but does not push it onto the list:
+    # the list is the reviewer's to edit, so nothing is added behind their back.
+    assert "NEW" in session.discovered_labels()
+    assert "NEW" not in session.label_choices()
 
 
 # ── annotations ──────────────────────────────────────────────────────────────
@@ -196,3 +199,74 @@ def test_a_blank_annotations_path_falls_back_inside_the_segments_folder(segments
     session = make_session(segments_dir, save_annotations=True, annotations_path="  ")
     assert session.annotations.enabled
     assert session.annotations.state.path.endswith("annotations.csv")
+
+
+# ── the editable label list ──────────────────────────────────────────────────
+def test_the_list_is_seeded_from_the_collection_and_written(segments_dir):
+    session = make_session(segments_dir, labels=["chuva"])
+    assert session.label_choices() == ["chuva", "BOAALB", "PHYLUT"]
+    assert (segments_dir / "labels.txt").read_text().split() == ["chuva", "BOAALB", "PHYLUT"]
+
+
+def test_a_stored_list_wins_over_what_the_collection_uses(segments_dir):
+    (segments_dir / "labels.txt").write_text("rain\nTURDRU\n", encoding="utf-8")
+    session = make_session(segments_dir)
+    assert session.label_choices() == ["rain", "TURDRU"]
+
+
+def test_labels_named_on_the_command_line_are_folded_into_a_stored_list(segments_dir):
+    (segments_dir / "labels.txt").write_text("rain\n", encoding="utf-8")
+    session = make_session(segments_dir, labels=["chuva"])
+    assert session.label_choices() == ["rain", "chuva"]
+    assert (segments_dir / "labels.txt").read_text().split() == ["rain", "chuva"]
+
+
+def test_comments_and_blank_lines_are_ignored(segments_dir):
+    (segments_dir / "labels.txt").write_text("# my labels\n\nrain\n  TURDRU  \n", encoding="utf-8")
+    assert make_session(segments_dir).label_choices() == ["rain", "TURDRU"]
+
+
+def test_editing_the_list_persists(segments_dir):
+    session = make_session(segments_dir)
+    session.labels.add("TURDRU")
+    session.labels.remove("PHYLUT")
+    assert session.label_choices() == ["BOAALB", "TURDRU"]
+    assert make_session(segments_dir).label_choices() == ["BOAALB", "TURDRU"]
+
+
+def test_replacing_the_list_dedupes_and_keeps_order(segments_dir):
+    session = make_session(segments_dir)
+    assert session.labels.replace([" b ", "a", "b", ""]) == ["b", "a"]
+
+
+def test_a_removed_label_still_works_when_a_clip_carries_it(segments_dir):
+    """Trimming the list must never block a verdict on a clip that uses the label."""
+    session = make_session(segments_dir)
+    session.labels.replace([])
+    goto_name(session, FIRST)
+    assert session.view().label == "BOAALB"          # from its folder, not the list
+    session.apply_verdict("true")
+    assert (segments_dir / "true" / FIRST).exists()
+
+
+def test_persistence_can_be_switched_off(segments_dir):
+    session = make_session(segments_dir, persist_labels=False, labels_file="")
+    session.labels.add("TURDRU")
+    assert "TURDRU" in session.label_choices()
+    assert not (segments_dir / "labels.txt").exists()
+
+
+def test_a_folder_that_cannot_be_written_is_reported_not_fatal(segments_dir, monkeypatch):
+    session = make_session(segments_dir)
+    monkeypatch.setattr(session.backend, "write_bytes",
+                        lambda *a, **k: (_ for _ in ()).throw(OSError("read-only")))
+    session.labels.add("TURDRU")
+    assert "TURDRU" in session.label_choices()       # the session carries on
+    assert "read-only" in session.labels.error
+    assert session.labels.persisted is False
+
+
+def test_multi_label_is_on_by_default(segments_dir):
+    session = make_session(segments_dir)
+    assert session.config.multi_label is True
+    assert (segments_dir / "multi").is_dir()

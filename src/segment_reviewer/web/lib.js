@@ -19,13 +19,6 @@
     return out;
   }
 
-  /** Append a label picked from a drop-down without repeating it. */
-  function addLabel(current, extra) {
-    const labels = splitLabels(current);
-    if (!labels.includes(extra)) labels.push(extra);
-    return labels.join(', ');
-  }
-
   /** Read a number out of an input, clamped, falling back when it is not one. */
   function clampInt(value, lo, hi, fallback) {
     const n = Number.parseInt(value, 10);
@@ -64,7 +57,28 @@
     return `/api/audio?${query.toString()}`;
   }
 
-  const lib = { SPEC_TYPES, splitLabels, addLabel, clampInt, mediaKey, spectrogramUrl, audioUrl };
+  /** Toggle a label in a selection; with `single`, it replaces the selection. */
+  function toggleLabel(selection, label, single) {
+    if (single) return selection.length === 1 && selection[0] === label ? [] : [label];
+    return selection.includes(label)
+      ? selection.filter((x) => x !== label)
+      : selection.concat([label]);
+  }
+
+  /* The buttons on screen: the list the reviewer curates, plus any label the
+   * current selection uses that is not on it — a clip whose own label has been
+   * trimmed away from the list must still show, or its verdict would silently
+   * change what it is labelled. */
+  function buttonLabels(list, selection) {
+    const out = (list || []).slice();
+    for (const label of selection || []) if (!out.includes(label)) out.push(label);
+    return out;
+  }
+
+  const lib = {
+    SPEC_TYPES, splitLabels, clampInt, mediaKey,
+    spectrogramUrl, audioUrl, toggleLabel, buttonLabels,
+  };
   if (typeof module === 'object' && module.exports) module.exports = lib;
   else root.SegRev = lib;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

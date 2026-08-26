@@ -83,4 +83,5 @@ def test_rescan_picks_up_a_clip_added_remotely(remote):
     write_wav(segments_dir / "XXX" / "N_20240101_000000_0.0_5.0.wav")
     session.rescan()
     assert session.counts()["pending"] == 4
-    assert "XXX" in session.label_choices()
+    assert "XXX" in session.discovered_labels()
+    assert session.labels.add("XXX")[-1] == "XXX"

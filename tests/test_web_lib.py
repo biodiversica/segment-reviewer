@@ -99,14 +99,50 @@ def test_a_clip_without_a_relpath_still_gets_a_key():
 
 
 @node
-def test_label_helpers():
+def test_split_labels():
     out = run("""
       console.log(JSON.stringify({
         split: lib.splitLabels(' b , a ,b '),
         empty: lib.splitLabels(''),
-        add: lib.addLabel('BOAALB', 'PHYLUT'),
-        dedupe: lib.addLabel('BOAALB, PHYLUT', 'BOAALB'),
       }));
     """)
-    assert out == {"split": ["b", "a"], "empty": [], "add": "BOAALB, PHYLUT",
-                   "dedupe": "BOAALB, PHYLUT"}
+    assert out == {"split": ["b", "a"], "empty": []}
+
+
+@node
+def test_toggling_a_label_adds_and_removes_it():
+    out = run("""
+      console.log(JSON.stringify({
+        add:    lib.toggleLabel(['BOAALB'], 'PHYLUT', false),
+        remove: lib.toggleLabel(['BOAALB', 'PHYLUT'], 'BOAALB', false),
+        none:   lib.toggleLabel(['BOAALB'], 'BOAALB', false),
+      }));
+    """)
+    assert out == {"add": ["BOAALB", "PHYLUT"], "remove": ["PHYLUT"], "none": []}
+
+
+@node
+def test_with_multi_label_off_a_label_replaces_the_selection():
+    out = run("""
+      console.log(JSON.stringify({
+        replace: lib.toggleLabel(['BOAALB'], 'PHYLUT', true),
+        clear:   lib.toggleLabel(['BOAALB'], 'BOAALB', true),
+        fromTwo: lib.toggleLabel(['BOAALB', 'PHYLUT'], 'BOAALB', true),
+      }));
+    """)
+    assert out == {"replace": ["PHYLUT"], "clear": [], "fromTwo": ["BOAALB"]}
+
+
+@node
+def test_a_selected_label_missing_from_the_list_still_gets_a_button():
+    """A clip whose own label was trimmed off the list must still show it,
+    or accepting the clip would silently change what it is labelled."""
+    out = run("""
+      console.log(JSON.stringify({
+        extra: lib.buttonLabels(['BOAALB'], ['TURDRU']),
+        noDupes: lib.buttonLabels(['BOAALB', 'PHYLUT'], ['BOAALB']),
+        empty: lib.buttonLabels([], []),
+      }));
+    """)
+    assert out == {"extra": ["BOAALB", "TURDRU"],
+                   "noDupes": ["BOAALB", "PHYLUT"], "empty": []}

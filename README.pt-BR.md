@@ -120,21 +120,38 @@ imprime o endereço que as outras máquinas devem usar.
 
 | Controle | O que faz |
 | --- | --- |
+| **Botões de rótulo** | Um botão por rótulo. Clique para marcá-lo neste segmento; clique de novo para desmarcar. O rótulo do próprio segmento já vem marcado, então aceitá-lo é um clique só. <kbd>1</kbd>…<kbd>9</kbd> acionam os nove primeiros. |
 | **✔ Verdadeiro** | O rótulo está certo. O clipe mantém seu caminho, sob `verdadeiro/`. |
-| **✘ Falso** | Errado. Escolha ou digite o rótulo correto e clique em **Confirmar** — o clipe é arquivado sob esse rótulo. |
+| **✘ Falso** | Errado. A seleção é limpa — clique no(s) rótulo(s) correto(s) e confirme. |
 | **← Anterior / Próximo →** | Navega sem decidir nada. |
 | **Tipo / Hz mín / Hz máx / dB** | Redesenha o espectrograma na hora — eixo de frequência em mel, em Hz linear ou em Hz logarítmico. O player de áudio não é afetado, então o clipe continua tocando enquanto você muda a visualização. |
-| **Rótulos** (com `--multi-label`) | Dá vários rótulos a um segmento — duas espécies cantando ao mesmo tempo. Vem preenchido com o rótulo atual do segmento; a lista suspensa acrescenta em vez de substituir. |
+| **✎** | Edita a própria lista de rótulos: cada botão ganha um **×** para removê-lo, e a caixa abaixo adiciona um novo. As mudanças são salvas em `labels.txt`, na pasta de segmentos. |
 | **⟳** | Relê a pasta, por exemplo quando chegam mais segmentos. |
 | **Idioma** | Alterna a interface entre Português e Inglês. |
 
-A lista suspensa oferece todos os rótulos já em uso no conjunto, mais o que você
-passar em `--labels`. Ela só preenche a caixa de texto — você sempre pode digitar
-um rótulo que não está na lista.
+Um segmento pode receber vários rótulos — duas espécies cantando ao mesmo tempo —
+o que é o padrão; `--no-multi-label` limita cada segmento a um rótulo.
 
 Teclado: <kbd>←</kbd> <kbd>→</kbd> para navegar, <kbd>T</kbd> / <kbd>F</kbd> para
-verdadeiro/falso, <kbd>Espaço</kbd> para tocar ou pausar, <kbd>Enter</kbd> para
-confirmar o rótulo digitado, <kbd>Esc</kbd> para cancelar.
+verdadeiro/falso, <kbd>1</kbd>…<kbd>9</kbd> para marcar os nove primeiros
+rótulos, <kbd>Espaço</kbd> para tocar ou pausar, <kbd>Enter</kbd> para confirmar
+uma correção, <kbd>Esc</kbd> para cancelar.
+
+### A lista de rótulos
+
+Os botões vêm de uma lista guardada em **`labels.txt`**, na pasta de segmentos, um
+rótulo por linha. Na primeira vez que um conjunto é aberto, a lista é semeada com
+`--labels` e com os rótulos que o conjunto já usa, e o arquivo é gravado; a partir
+daí é ele que manda, e você o edita pela interface (ou à mão — linhas em branco e
+comentários com `#` são ignorados).
+
+Nada é acrescentado pelas suas costas: uma releitura que encontre uma pasta nova
+não empurra o nome dela para a lista. Enxugar a lista também é seguro — o rótulo
+do próprio clipe sempre aparece como botão, esteja ou não na lista, e digitar um
+nome na caixa o adiciona à lista e o marca no segmento em tela de uma vez.
+
+Use `--labels-file` para guardar a lista em outro lugar, ou `--no-labels-file`
+para que as edições valham só naquela sessão.
 
 ### Para onde um veredito leva o clipe
 
@@ -275,8 +292,11 @@ segment-reviewer SEGMENTOS [OPÇÕES]
   SEGMENTOS                     Caminho local, ou ssh://[usuário@]host[:porta]/caminho
 
   -l, --lang TEXT               Idioma inicial da interface: en, pt-BR  [padrão: en]
-      --labels TEXT             Rótulos extras na lista suspensa, separados por vírgulas.
-                                Os rótulos já em uso no conjunto são sempre oferecidos
+      --labels TEXT             Rótulos para semear a lista, separados por vírgulas.
+                                Sempre incorporados a uma lista já gravada
+      --labels-file TEXT        Onde a lista fica, um rótulo por linha
+                                [padrão: <SEGMENTOS>/labels.txt]
+      --no-labels-file          Não lê nem grava a lista; as edições valem só na sessão
       --label-from TEXT         De onde vem o rótulo: folder, filename ou none
                                 [padrão: folder]
       --filename-pattern TEXT   'default', 'vector-search', ou uma regex com os grupos
@@ -284,7 +304,8 @@ segment-reviewer SEGMENTOS [OPÇÕES]
                                 score, extra  [padrão: default]
       --datetime-format TEXT    Formato strptime da data e hora capturadas
                                 [padrão: %Y%m%d%H%M%S]
-      --multi-label             Permite vários rótulos por segmento (arquivos em multi/)
+      --no-multi-label          Limita cada segmento a um rótulo (vários rótulos é o
+                                padrão; esses clipes vão para multi/)
       --annotations             Grava a tabela de anotações
       --annotations-path TEXT   Onde ela fica  [padrão: <SEGMENTOS>/annotations.csv]
 

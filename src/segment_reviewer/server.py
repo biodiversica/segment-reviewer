@@ -30,6 +30,14 @@ class NavBody(BaseModel):
     index: int | None = None
 
 
+class LabelsBody(BaseModel):
+    """Either the whole list, or one label to add or drop."""
+
+    labels: list[str] | None = None
+    add: str | None = None
+    remove: str | None = None
+
+
 def _annotation_payload(session: ReviewSession) -> dict:
     state = session.annotations.state
     return {
@@ -44,12 +52,23 @@ def _annotation_payload(session: ReviewSession) -> dict:
     }
 
 
+def _labels_payload(session: ReviewSession) -> dict:
+    store = session.labels
+    return {
+        "labels": store.labels,
+        "path": store.path,
+        "persisted": store.persisted,
+        "error": store.error,
+    }
+
+
 def _state_payload(session: ReviewSession) -> dict:
     view = session.view()
     return {
         "segment": None if view is None else view.__dict__,
         "counts": session.counts(),
         "labels": session.label_choices(),
+        "label_store": _labels_payload(session),
         "annotations": _annotation_payload(session),
     }
 
@@ -179,6 +198,21 @@ def create_app(session: ReviewSession, config: ReviewConfig,
         else:
             session.navigate(body.delta)
         return _state_payload(session)
+
+    @app.get("/api/labels")
+    async def labels():
+        return _labels_payload(session)
+
+    @app.post("/api/labels")
+    async def edit_labels(body: LabelsBody):
+        """Edit the label list from the GUI: replace it, or add/drop one label."""
+        if body.labels is not None:
+            session.labels.replace(body.labels)
+        if body.add:
+            session.labels.add(body.add)
+        if body.remove:
+            session.labels.remove(body.remove)
+        return {**_labels_payload(session), "state": _state_payload(session)}
 
     @app.post("/api/verdict")
     async def verdict(body: VerdictBody):

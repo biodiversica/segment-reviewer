@@ -23,6 +23,9 @@ ALL_VERDICT_DIR_NAMES: set[str] = {
 SOURCES_CSV = "segment_sources.csv"
 ANNOTATION_COLUMNS = ["site", "file", "label", "start_time", "end_time"]
 
+#: Where the editable label list is kept, relative to the segments folder.
+DEFAULT_LABELS_FILE = "labels.txt"
+
 
 @dataclass
 class ReviewConfig:
@@ -44,9 +47,13 @@ class ReviewConfig:
     filename_pattern: str = "default"
     datetime_format: str = DEFAULT_DATETIME_FORMAT
 
-    multi_label: bool = False
+    multi_label: bool = True
     save_annotations: bool = False
     annotations_path: str = ""
+
+    # The editable label list
+    labels_file: str = DEFAULT_LABELS_FILE
+    persist_labels: bool = True
 
     # Spectrogram defaults
     spec_type: str = "mel"

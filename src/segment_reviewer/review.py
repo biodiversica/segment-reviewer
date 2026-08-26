@@ -8,6 +8,7 @@ from pathlib import Path
 
 from .annotations import AnnotationTable, segment_bounds
 from .config import ALL_VERDICT_DIR_NAMES, ReviewConfig
+from .labels import LabelStore
 from .naming import SegmentParser, nfc, slug, split_labels
 from .spectrogram import SpectrogramError, duration_seconds, render
 from .storage import Backend
@@ -62,6 +63,13 @@ class ReviewSession:
         self.index = 0
         self._reviewed: dict[str, int] = {k: 0 for k in self.dirs}
         self.rescan()
+        self.labels = LabelStore(
+            backend,
+            backend.resolve(config.labels_file) if config.labels_file else "",
+            configured=config.labels,
+            discovered=self.discovered_labels(),
+            persist=config.persist_labels,
+        )
 
     # ── setup ────────────────────────────────────────────────────────────────
     def _ensure_dirs(self) -> None:
@@ -167,26 +175,24 @@ class ReviewSession:
     def _parse(self, path: str):
         return self.parser.parse(path, self.backend.root)
 
-    # ── labels offered in the drop-downs ─────────────────────────────────────
-    def label_choices(self) -> list[str]:
-        """Configured labels first, then every label the pending clips carry.
+    # ── labels offered in the reviewer ───────────────────────────────────────
+    def discovered_labels(self) -> list[str]:
+        """Every label the pending clips already carry, in alphabetical order.
 
-        With no ``--labels`` given, the drop-down is built from the collection
-        itself — the folder names in folder mode, the labels in the file names in
-        filename mode — so a reviewer can always reach the classes already in use.
+        The folder names in folder mode, the labels in the file names in filename
+        mode. Used to seed the label list the first time a collection is opened.
         """
-        chosen = [nfc(x).strip() for x in self.config.labels if str(x).strip()]
         with self._lock:
             pending = list(self.segments)
-        found = sorted({
+        return sorted({
             nfc(info.label).strip()
             for info in map(self._parse, pending)
             if str(info.label).strip()
         })
-        for label in found:
-            if label not in chosen:
-                chosen.append(label)
-        return chosen
+
+    def label_choices(self) -> list[str]:
+        """The labels offered as buttons in the reviewer."""
+        return self.labels.labels
 
     # ── verdicts ─────────────────────────────────────────────────────────────
     def _destination_dir(self, info, verdict: str, final: list[str]) -> str:

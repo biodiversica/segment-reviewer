@@ -14,11 +14,13 @@
     progress: $('progress'), meta: $('meta'), controls: $('controls'),
     specWrap: $('spec-wrap'), spec: $('spec'), player: $('player'),
     error: $('error'), ann: $('ann'),
-    multiRow: $('multi-row'), multiPick: $('multi-pick'), multiInput: $('multi-input'),
+    labelsPanel: $('labels-panel'), labelsTitle: $('labels-title'),
+    labelButtons: $('label-buttons'), labelInput: $('label-input'),
+    btnAddLabel: $('btn-add-label'), btnManage: $('btn-manage'),
+    labelsNote: $('labels-note'),
     navRow: $('nav-row'), btnPrev: $('btn-prev'), btnTrue: $('btn-true'),
     btnFalse: $('btn-false'), btnNext: $('btn-next'),
     falseRow: $('false-row'), falsePrompt: $('false-prompt'),
-    falsePick: $('false-pick'), falseInput: $('false-input'),
     btnConfirm: $('btn-confirm'), btnCancel: $('btn-cancel'),
     specType: $('spec-type'), specFmin: $('spec-fmin'), specFmax: $('spec-fmax'),
     specDb: $('spec-db'),
@@ -26,9 +28,15 @@
   };
 
   const app = {
-    bundle: {}, lang: 'en', multi: false, boot: null,
-    state: { segment: null, counts: {}, labels: [], annotations: {} },
+    bundle: {}, lang: 'en', multi: true, boot: null,
+    state: { segment: null, counts: {}, labels: [], label_store: {}, annotations: {} },
     busy: false, specToken: 0,
+    //: labels chosen for the segment on screen
+    selection: [],
+    //: true while the reviewer is correcting a rejected segment
+    correcting: false,
+    //: true while the label list itself is being edited
+    managing: false,
   };
 
   // ── i18n ──────────────────────────────────────────────────────────────────
@@ -66,15 +74,85 @@
   const post = (path, body) => api(path, { method: 'POST', body: JSON.stringify(body || {}) });
 
   // ── label helpers ─────────────────────────────────────────────────────────
-  const { splitLabels, addLabel, spectrogramUrl, audioUrl } = window.SegRev;
+  const { splitLabels, spectrogramUrl, audioUrl, toggleLabel, buttonLabels } = window.SegRev;
 
-  function fillPicker(select, labels) {
-    select.innerHTML = '';
-    const head = new Option(t('labels.pick'), '');
-    select.add(head);
-    for (const label of labels) select.add(new Option(label, label));
-    select.value = '';
-    select.classList.toggle('hidden', labels.length === 0);
+  // ── the label panel ───────────────────────────────────────────────────────
+  function renderLabels() {
+    const labels = buttonLabels(app.state.labels, app.selection);
+    el.labelsTitle.textContent = app.correcting ? t('labels.correct') : t('labels.selected');
+    el.labelsPanel.classList.toggle('managing', app.managing);
+    el.btnManage.classList.toggle('active', app.managing);
+    el.btnManage.title = t(app.managing ? 'labels.manage_on' : 'labels.manage');
+
+    el.labelButtons.innerHTML = '';
+    labels.forEach((label, i) => {
+      const chip = document.createElement('span');
+      chip.className = 'chip' + (app.selection.includes(label) ? ' on' : '');
+
+      const pick = document.createElement('button');
+      pick.type = 'button';
+      pick.className = 'chip-pick';
+      // The first nine get a number, matching the 1…9 keyboard shortcuts.
+      pick.innerHTML = (i < 9 ? `<kbd>${i + 1}</kbd>` : '') + escapeHtml(label);
+      pick.addEventListener('click', () => pickLabel(label));
+      chip.appendChild(pick);
+
+      const drop = document.createElement('button');
+      drop.type = 'button';
+      drop.className = 'chip-drop';
+      drop.textContent = '×';
+      drop.title = t('labels.remove', { label });
+      drop.addEventListener('click', () => editList({ remove: label }));
+      chip.appendChild(drop);
+
+      el.labelButtons.appendChild(chip);
+    });
+    if (!labels.length) {
+      el.labelButtons.innerHTML = `<span class="hint">${t('labels.empty')}</span>`;
+    }
+    renderLabelsNote();
+  }
+
+  function renderLabelsNote() {
+    const store = app.state.label_store || {};
+    if (store.error) {
+      el.labelsNote.innerHTML =
+        `<span class="bad">${t('labels.not_saved', { error: escapeHtml(store.error) })}</span>`;
+    } else if (!app.managing) {
+      el.labelsNote.textContent = '';
+    } else if (store.persisted) {
+      el.labelsNote.textContent = t('labels.saved_to', { path: store.path });
+    } else {
+      el.labelsNote.textContent = t('labels.session_only');
+    }
+  }
+
+  function pickLabel(label) {
+    // One label at a time unless multi-label is on.
+    app.selection = toggleLabel(app.selection, label, !app.multi);
+    renderLabels();
+  }
+
+  async function editList(change) {
+    try {
+      const data = await post('/api/labels', change);
+      app.state = data.state;
+      renderLabels();
+    } catch (err) {
+      el.error.textContent = err.message || t('errors.network');
+    }
+  }
+
+  function addTypedLabel() {
+    const typed = splitLabels(el.labelInput.value);
+    if (!typed.length) return;
+    el.labelInput.value = '';
+    // Typing a label both puts it on the list and picks it for this segment,
+    // so a new class costs one action rather than two.
+    for (const label of typed) {
+      if (!app.selection.includes(label)) app.selection.push(label);
+    }
+    editList({ labels: buttonLabels(app.state.labels, typed) });
   }
 
   // ── rendering ─────────────────────────────────────────────────────────────
@@ -155,7 +233,7 @@
       return;
     }
     if (!a.enabled) {
-      el.ann.innerHTML = app.multi ? `<span class="warn">${t('annotations.multi_without_table')}</span>` : '';
+      el.ann.textContent = '';
       return;
     }
     let warn = '';
@@ -174,13 +252,9 @@
     { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
   ));
 
-  function render({ reloadMedia = true } = {}) {
+  function render({ reloadMedia = true, keepSelection = false } = {}) {
     const seg = app.state.segment;
     renderCounts();
-    fillPicker(el.multiPick, app.state.labels);
-    fillPicker(el.falsePick, app.state.labels);
-    el.falsePrompt.textContent = app.state.labels.length
-      ? t('false_row.prompt_list') : t('false_row.prompt_free');
 
     if (!seg) {
       // Hide the viewer rather than leaving an empty frame in place.
@@ -194,7 +268,7 @@
       el.player.classList.add('hidden');
       el.player.pause();
       el.navRow.classList.add('hidden');
-      el.multiRow.classList.add('hidden');
+      el.labelsPanel.classList.add('hidden');
       el.falseRow.classList.add('hidden');
       renderAnnotations(true);
       return;
@@ -205,26 +279,35 @@
     el.controls.classList.remove('hidden');
     el.specWrap.classList.remove('hidden');
     el.player.classList.remove('hidden');
-    el.navRow.classList.remove('hidden');
-    el.falseRow.classList.add('hidden');
     el.error.textContent = '';
     renderMeta(seg);
     renderAnnotations(false);
 
-    if (app.multi) {
-      // Start from the label the segment already carries; only a second species
-      // has to be typed in.
-      el.multiInput.value = seg.label;
-      el.multiRow.classList.remove('hidden');
-    } else {
-      el.multiRow.classList.add('hidden');
+    if (!keepSelection) {
+      // Start from the label the segment already carries: accepting it is then
+      // a single click, and only a correction or a second species needs more.
+      app.selection = seg.label ? [seg.label] : [];
+      app.correcting = false;
     }
+    setCorrecting(app.correcting);
 
     el.btnPrev.disabled = seg.index <= 0;
     el.btnNext.disabled = seg.index >= seg.total - 1;
 
     loadSpectrogram();
     if (reloadMedia) loadAudio();
+  }
+
+  /** Show the panel in either its normal or its "pick the correction" state. */
+  function setCorrecting(on) {
+    app.correcting = on;
+    // With multi-label off the panel is only needed while correcting, which is
+    // how the reviewer behaved before there was one.
+    el.labelsPanel.classList.toggle('hidden', !(app.multi || on));
+    el.falseRow.classList.toggle('hidden', !on);
+    el.navRow.classList.toggle('hidden', on);
+    el.falsePrompt.textContent = t('false_row.prompt_list');
+    renderLabels();
   }
 
   // ── actions ───────────────────────────────────────────────────────────────
@@ -243,36 +326,34 @@
 
   const nav = (delta) => run(() => post('/api/nav', { delta }));
 
-  function currentLabels() {
-    if (!app.multi) return null;
+  /** The labels to file the current segment under. */
+  function chosenLabels() {
+    if (app.selection.length) return app.selection.slice();
     const seg = app.state.segment;
-    const labels = splitLabels(el.multiInput.value);
-    return labels.length ? labels : (seg ? [seg.label] : null);
+    if (app.correcting) return [t('false_row.unknown')];
+    return seg && seg.label ? [seg.label] : [];
   }
 
-  const markTrue = () => run(() => post('/api/verdict', { verdict: 'true', labels: currentLabels() }));
-
-  function openFalseRow() {
+  function verdict(kind) {
     if (!app.state.segment) return;
-    el.falseInput.value = '';
-    el.falsePick.value = '';
-    el.falseRow.classList.remove('hidden');
-    el.multiRow.classList.add('hidden');   // one label box on screen at a time
-    el.navRow.classList.add('hidden');
-    el.falseInput.focus();
+    const labels = chosenLabels();
+    app.correcting = false;
+    return run(() => post('/api/verdict', { verdict: kind, labels }));
   }
 
-  function closeFalseRow() {
-    el.falseRow.classList.add('hidden');
-    el.navRow.classList.remove('hidden');
-    el.multiRow.classList.toggle('hidden', !app.multi);
+  const markTrue = () => verdict('true');
+
+  function startCorrection() {
+    if (!app.state.segment || app.correcting) return;
+    app.selection = [];        // the proposed label is what is being rejected
+    setCorrecting(true);
+    el.labelInput.focus();
   }
 
-  function confirmFalse() {
-    const labels = splitLabels(el.falseInput.value);
-    const final = labels.length ? labels : [t('false_row.unknown')];
-    closeFalseRow();
-    return run(() => post('/api/verdict', { verdict: 'false', labels: final }));
+  function cancelCorrection() {
+    const seg = app.state.segment;
+    app.selection = seg && seg.label ? [seg.label] : [];
+    setCorrecting(false);
   }
 
   async function setLanguage(code, { persist = true } = {}) {
@@ -282,39 +363,27 @@
     if (persist) localStorage.setItem('segrev.lang', app.lang);
     el.lang.value = app.lang;
     applyI18n();
-    render({ reloadMedia: false });
+    render({ reloadMedia: false, keepSelection: true });
   }
 
   // ── wiring ────────────────────────────────────────────────────────────────
   el.btnPrev.addEventListener('click', () => nav(-1));
   el.btnNext.addEventListener('click', () => nav(+1));
   el.btnTrue.addEventListener('click', markTrue);
-  el.btnFalse.addEventListener('click', openFalseRow);
-  el.btnConfirm.addEventListener('click', confirmFalse);
-  el.btnCancel.addEventListener('click', closeFalseRow);
+  el.btnFalse.addEventListener('click', startCorrection);
+  el.btnConfirm.addEventListener('click', () => verdict('false'));
+  el.btnCancel.addEventListener('click', cancelCorrection);
   el.btnRescan.addEventListener('click', () => run(() => post('/api/rescan')));
   el.btnHelp.addEventListener('click', () => el.help.showModal());
 
-  // The drop-down only fills the text box — the text stays editable, so a label
-  // outside the list can still be typed.
-  el.falsePick.addEventListener('change', () => {
-    if (!el.falsePick.value) return;
-    el.falseInput.value = app.multi
-      ? addLabel(el.falseInput.value, el.falsePick.value)
-      : el.falsePick.value;
-    el.falsePick.value = '';   // reset so the same entry can be picked again
-    el.falseInput.focus();
+  el.btnManage.addEventListener('click', () => {
+    app.managing = !app.managing;
+    renderLabels();
   });
-
-  el.multiPick.addEventListener('change', () => {
-    if (!el.multiPick.value) return;
-    el.multiInput.value = addLabel(el.multiInput.value, el.multiPick.value);
-    el.multiPick.value = '';
-  });
-
-  el.falseInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); confirmFalse(); }
-    if (e.key === 'Escape') { e.preventDefault(); closeFalseRow(); }
+  el.btnAddLabel.addEventListener('click', addTypedLabel);
+  el.labelInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); addTypedLabel(); }
+    if (e.key === 'Escape') { e.preventDefault(); el.labelInput.value = ''; el.labelInput.blur(); }
   });
 
   for (const control of [el.specType, el.specFmin, el.specFmax, el.specDb]) {
@@ -332,17 +401,30 @@
   document.addEventListener('keydown', (e) => {
     if (e.target.matches('input, select, textarea') || el.help.open) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
-    const keys = {
-      ArrowLeft: () => nav(-1),
-      ArrowRight: () => nav(+1),
-      t: markTrue, T: markTrue,
-      f: openFalseRow, F: openFalseRow,
-    };
+
     if (e.key === ' ') {
       e.preventDefault();
       el.player.paused ? el.player.play().catch(() => {}) : el.player.pause();
       return;
     }
+    // 1…9 toggle the first nine labels, which is the whole point of the buttons.
+    if (/^[1-9]$/.test(e.key)) {
+      const labels = buttonLabels(app.state.labels, app.selection);
+      const label = labels[Number(e.key) - 1];
+      if (label) { e.preventDefault(); pickLabel(label); }
+      return;
+    }
+    if (app.correcting && (e.key === 'Enter' || e.key === 'Escape')) {
+      e.preventDefault();
+      (e.key === 'Enter' ? verdict('false') : cancelCorrection)();
+      return;
+    }
+    const keys = {
+      ArrowLeft: () => nav(-1),
+      ArrowRight: () => nav(+1),
+      t: markTrue, T: markTrue,
+      f: startCorrection, F: startCorrection,
+    };
     const action = keys[e.key];
     if (action) { e.preventDefault(); action(); }
   });

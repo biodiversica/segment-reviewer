@@ -119,21 +119,38 @@ prints the address other machines should use.
 
 | Control | What it does |
 | --- | --- |
+| **Label buttons** | One button per label. Click to pick it for this segment; click again to drop it. The segment's own label starts selected, so accepting it is a single click. <kbd>1</kbd>…<kbd>9</kbd> hit the first nine. |
 | **✔ True** | The label is correct. The clip keeps its path, under `true/`. |
-| **✘ False** | Wrong. Pick or type the correct label, then **Confirm** — the clip is filed under that label instead. |
+| **✘ False** | Wrong. The selection clears — click the correct label(s), then **Confirm**. |
 | **← Prev / Next →** | Browse without making a decision. |
 | **Type / Min Hz / Max Hz / dB floor** | Redraw the spectrogram instantly — mel, linear-Hz or log-Hz frequency axis. The audio player is not touched, so a clip keeps playing while you change the view. |
-| **Labels** (with `--multi-label`) | Give one segment several labels — two species singing at once. Pre-filled with the segment's current label; the drop-down adds to it instead of replacing it. |
+| **✎** | Edit the label list itself: each button grows a **×** to drop it, and the box below adds a new one. Changes are saved to `labels.txt` in the segments folder. |
 | **⟳** | Re-read the folder, e.g. after more segments arrive. |
 | **Language** | Switch the interface between English and Português. |
 
-The drop-down offers every label already in use in the collection, plus anything
-you pass to `--labels`. It only fills the text box — you can always type a label
-that is not in the list.
+Several labels can be given to one segment — two species singing at once — which
+is the default; `--no-multi-label` restricts each segment to one.
 
 Keyboard: <kbd>←</kbd> <kbd>→</kbd> to browse, <kbd>T</kbd> / <kbd>F</kbd> for
-true/false, <kbd>Space</kbd> to play or pause, <kbd>Enter</kbd> to confirm a
-typed label, <kbd>Esc</kbd> to cancel.
+true/false, <kbd>1</kbd>…<kbd>9</kbd> to toggle the first nine labels,
+<kbd>Space</kbd> to play or pause, <kbd>Enter</kbd> to confirm a correction,
+<kbd>Esc</kbd> to cancel.
+
+### The label list
+
+The buttons come from a list kept in **`labels.txt`** in the segments folder, one
+label per line. The first time a collection is opened the list is seeded from
+`--labels` and from the labels the collection already uses, and written out; from
+then on that file *is* the list, and you edit it from the GUI (or by hand — blank
+lines and `#` comments are ignored).
+
+Nothing is ever added back behind your back: a rescan that finds a new folder
+does not push its name onto the list. Trimming the list is safe, too — a clip's
+own label always shows as a button whether or not it is on the list, and typing a
+name into the box both adds it to the list and picks it for the segment on screen.
+
+Use `--labels-file` to keep the list somewhere else, or `--no-labels-file` to make
+edits last only for the session.
 
 ### Where a verdict puts a clip
 
@@ -272,8 +289,11 @@ segment-reviewer SEGMENTS [OPTIONS]
   SEGMENTS                      Local path, or ssh://[user@]host[:port]/path
 
   -l, --lang TEXT               Interface language at start: en, pt-BR  [default: en]
-      --labels TEXT             Extra drop-down labels, comma-separated. The labels
-                                already in use in the collection are always offered
+      --labels TEXT             Labels to seed the list with, comma-separated. Always
+                                folded into a stored list
+      --labels-file TEXT        Where the label list is kept, one per line
+                                [default: <SEGMENTS>/labels.txt]
+      --no-labels-file          Do not read or write it; edits last for this session
       --label-from TEXT         Where a segment's label is read from: folder, filename
                                 or none  [default: folder]
       --filename-pattern TEXT   'default', 'vector-search', or a regex with the named
@@ -281,7 +301,8 @@ segment-reviewer SEGMENTS [OPTIONS]
                                 score, extra  [default: default]
       --datetime-format TEXT    strptime format for the captured date and time
                                 [default: %Y%m%d%H%M%S]
-      --multi-label             Allow several labels per segment (files under multi/)
+      --no-multi-label          Restrict each segment to one label (multi-label is on
+                                by default; such clips go under multi/)
       --annotations             Write the annotation table
       --annotations-path TEXT   Where it lives  [default: <SEGMENTS>/annotations.csv]
 
