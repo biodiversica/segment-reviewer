@@ -17,6 +17,7 @@ def test_bootstrap_carries_everything_the_gui_needs(client):
     assert data["folder"] == session.backend.display
     assert {lang["code"] for lang in data["languages"]} == {"en", "pt-BR"}
     assert data["state"]["segment"]["label"] == "BOAALB"
+    assert data["state"]["segment"]["folder"] == "POCA/BOAALB"
     assert data["state"]["counts"]["pending"] == 3
     assert data["state"]["labels"][0] == "rain"
 
@@ -48,7 +49,9 @@ def test_verdict_moves_the_file(client, segments_dir):
     data = api.post("/api/verdict", json={"verdict": "true"}).json()
     assert data["counts"]["pending"] == 2
     assert data["counts"]["true"] == 1
-    assert (segments_dir / "true" / data["moved"].split("/")[-1]).exists()
+    # The clip keeps the path it had, under true/.
+    assert data["moved"] == "true/POCA/BOAALB/POCA_20240116_190000_40.0_45.0_det3.wav"
+    assert (segments_dir / data["moved"]).exists()
 
 
 def test_unknown_verdict_is_rejected(client):

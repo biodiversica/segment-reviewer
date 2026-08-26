@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "segment-reviewer"
 version = "0.1.0"
-description = "Browser GUI to review extracted bioacoustic audio segments (Step 6 of the vector-search notebooks), over a local folder or SSH/SFTP."
+description = "Browser GUI for reviewing a folder of audio segments — spectrogram, player, true/false verdicts — over a local folder or SSH/SFTP."
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"

@@ -1,9 +1,8 @@
-"""Spectrogram rendering, ported from the notebook's Step 6 cell.
+"""Spectrogram rendering.
 
-Same librosa calls and the same defaults, so a clip looks here exactly as it
-looks in Colab. Rendering goes through matplotlib's object API behind a lock
-rather than ``pyplot``: the server draws from a worker thread, and the pyplot
-state machine is not safe to share.
+Rendering goes through matplotlib's object API behind a lock rather than
+``pyplot``: the server draws from a worker thread, and the pyplot state machine
+is not safe to share.
 """
 
 from __future__ import annotations

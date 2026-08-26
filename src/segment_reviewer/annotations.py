@@ -1,9 +1,9 @@
 """The annotation table written as each verdict is given.
 
 One row per label: ``site, file, label, start_time, end_time``, where *file* is
-the original recording the segment was cut from and the times are the segment's
-position inside it (padding included). Rows are appended as they happen, so a
-lost session keeps what was already reviewed.
+the recording the segment was cut from and the times are the segment's position
+inside it (padding included). Rows are appended as they happen, so a lost session
+keeps what was already reviewed.
 """
 
 from __future__ import annotations
@@ -49,10 +49,11 @@ class AnnotationTable:
         return self.state.enabled
 
     def _load_sources(self) -> None:
-        """Read the manifest Step 5 wrote, mapping each clip to its recording.
+        """Read the optional manifest mapping each clip to its source recording.
 
-        A clip's file name does not carry the recording it came from, so without
-        this manifest the ``file`` column stays empty.
+        A clip's file name rarely carries the recording it was cut from, so
+        without a ``segment_sources.csv`` beside the segments the ``file`` column
+        stays empty. Collections that have no such manifest simply leave it blank.
         """
         csv_path = self.backend.join(self.backend.root, SOURCES_CSV)
         try:
@@ -97,11 +98,11 @@ def segment_bounds(duration: float | None, det_start: float | None,
                    det_end: float | None) -> tuple[float | None, float | None]:
     """Start and end of a segment within its source recording, in seconds.
 
-    The filename carries the detection window, but the clip on disk may be wider
-    because of the padding used in Step 5. The difference between the clip's real
-    duration and that window is split evenly over both sides, which reproduces how
-    the extraction cell cut it (clamped at the start of the recording). Falls back
-    to the filename window when the clip cannot be measured.
+    The file name carries the window that was detected, but the clip on disk may
+    be wider because of the padding used when it was cut. The difference between
+    the clip's real duration and that window is split evenly over both sides,
+    which reproduces a symmetric pad (clamped at the start of the recording).
+    Falls back to the file name's window when the clip cannot be measured.
     """
     if det_start is None or det_end is None:
         return None, None

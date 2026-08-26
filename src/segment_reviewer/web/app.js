@@ -65,7 +65,7 @@
 
   const post = (path, body) => api(path, { method: 'POST', body: JSON.stringify(body || {}) });
 
-  // ── label helpers (mirror of the notebook's) ──────────────────────────────
+  // ── label helpers ─────────────────────────────────────────────────────────
   function splitLabels(text) {
     const out = [];
     for (const raw of String(text || '').split(',')) {
@@ -141,13 +141,21 @@
   }
 
   function renderMeta(seg) {
-    const unknown = t('meta_row.unknown');
-    const bits = [
-      `<b>${escapeHtml(seg.label)}</b>`,
-      `${t('meta_row.score')}: <b>${seg.score === null ? unknown : seg.score.toFixed(3)}</b>`,
-      `${t('meta_row.site')}: <b>${escapeHtml(seg.site || unknown)}</b>`,
-      `${t('meta_row.date')}: <b>${escapeHtml(seg.recorded_at || unknown)}</b>`,
-    ];
+    // Only what this segment actually carries: a collection named by another
+    // convention simply shows fewer facts rather than a row of question marks.
+    const bits = [seg.label
+      ? `<b>${escapeHtml(seg.label)}</b>`
+      : `<i>${t('meta_row.no_label')}</i>`];
+    const add = (key, value) => {
+      if (value !== null && value !== undefined && value !== '') {
+        bits.push(`${t(`meta_row.${key}`)}: <b>${escapeHtml(value)}</b>`);
+      }
+    };
+    if (seg.score !== null) add('score', seg.score.toFixed(3));
+    add('site', seg.site);
+    add('date', seg.recorded_at);
+    add('folder', seg.folder);
+    add('extra', seg.extra);
     el.meta.innerHTML = bits.join(' &nbsp;|&nbsp; ');
   }
 

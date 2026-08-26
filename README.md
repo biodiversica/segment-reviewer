@@ -2,21 +2,57 @@
 
 [Português (Brasil) →](README.pt-BR.md)
 
-A standalone version of **“Step 6 — Review Extracted Segments”** from the
-[bioacoustic vector-search notebooks](https://github.com/biodiversica/bioacoustic-ipynbs):
-a command-line tool that serves a browser GUI for reviewing the audio clips a
-vector search extracted.
+A command-line tool that serves a **browser GUI for reviewing a folder of audio
+segments**. Each clip is shown as a spectrogram with whatever its folder and file
+name say about it; you listen to it and mark it **True** (correct) or **False**
+(wrong, with the correct label). Reviewed clips are moved into `true/`, `false/`
+or `multi/` inside the segments folder, and optionally recorded in an annotation
+table.
 
-Each segment is shown as a spectrogram with its label, similarity score, site and
-recording time. Listen to it, then mark it **True** (a genuine match) or **False**
-(a false positive, with the correct label). Marked clips are moved into `true/`,
-`false/<label>/` or `multi/` inside the segments folder, and optionally recorded
-in an annotation table.
+It works on any collection of clips, however they were produced — a detector's
+output, hand-cut examples, a classifier's predictions to be validated. The
+segments folder can be **local** or **remote over SSH**, and the GUI can be
+served to **another machine** on your LAN or Tailscale network. The interface is
+available in **English** and **Português (Brasil)**, switchable while you work.
 
-The segments folder can be a **local directory** or a **remote one over SSH**, and
-the GUI can be served to **another machine** on your LAN or Tailscale network.
-The interface is available in **English** and **Português (Brasil)**, switchable
-while you work.
+> It also drops straight into the workflow of the
+> [bioacoustic vector-search notebooks](https://github.com/biodiversica/bioacoustic-ipynbs)
+> as a standalone replacement for their *Review Extracted Segments* step — see
+> [Reading other naming conventions](#reading-other-naming-conventions).
+
+---
+
+## How a segment is read
+
+Two independent sources, both configurable:
+
+**The folder gives the label.** A reviewed collection is normally organised one
+folder per class, so the folder a clip sits in is the label it currently carries:
+
+```
+segments/
+├── PONTO_A/BOAALB/PONTO_A_20240115_053000_12.0_17.0_det1.wav   → label BOAALB
+├── PONTO_A/PHYLUT/PONTO_A_20240115_061500_3.5_8.5_det2.wav     → label PHYLUT
+└── chuva/POCA_20240116_200000_5.0_10.0_det4.wav                → label chuva
+```
+
+Any folders above the label are kept as they are — `2024/campo/PONTO_A/BOAALB/`
+labels the clip `BOAALB` and remembers the three folders above it. A clip sitting
+directly in the segments folder simply has no label yet.
+
+**The file name gives the rest.** By default it is read as
+
+```
+[site]_[YYYYMMDD]_[HHMMSS]_[start]_[end]_*
+     PONTO_A_20240115_053000_12.0_17.0_det1.wav
+```
+
+- `site` may contain underscores — the match is anchored on the date and time.
+- `start`/`end` are the clip's position, in seconds, inside the recording it was
+  cut from. Both separators work: `12.0_17.0` and `12.0-17.0s`.
+- `_*` is anything else, shown in the GUI as *extra*.
+- Every part after the site is optional, and **a name that matches nothing at all
+  is still perfectly reviewable** — the GUI just shows less about it.
 
 ---
 
@@ -64,19 +100,16 @@ which ships with the wheels on Linux, macOS and Windows.
 
 ```bash
 # A local folder, GUI on this machine
-segment-reviewer ~/vector_search_segments
+segment-reviewer ~/segments
 
-# Portuguese interface, drop-down labels, annotation table
-segment-reviewer ~/vector_search_segments \
-    --lang pt-BR \
-    --labels "BOAALB, PHYLUT, chuva" \
-    --annotations
+# Portuguese interface, extra drop-down labels, annotation table
+segment-reviewer ~/segments --lang pt-BR --labels "BOAALB, PHYLUT, chuva" --annotations
 
 # Segments on a server, reviewed from your laptop
-segment-reviewer ssh://user@fieldserver/data/vector_search_segments
+segment-reviewer ssh://user@fieldserver/data/segments
 
 # Serve the GUI to the network (LAN, Tailscale, …)
-segment-reviewer /data/vector_search_segments --host 0.0.0.0 --port 8765
+segment-reviewer /data/segments --host 0.0.0.0 --port 8765
 ```
 
 The command prints a summary and the URL to open. With `--host 0.0.0.0` it also
@@ -86,37 +119,42 @@ prints the address other machines should use.
 
 | Control | What it does |
 | --- | --- |
-| **✔ True** | The match is genuine. The clip moves to `true/`. |
-| **✘ False** | A false positive. Pick or type the correct label, then **Confirm** — the clip moves to `false/<label>/` and its file name is rewritten to carry the label you confirmed, so a name never keeps the wrong one. |
+| **✔ True** | The label is correct. The clip keeps its path, under `true/`. |
+| **✘ False** | Wrong. Pick or type the correct label, then **Confirm** — the clip is filed under that label instead. |
 | **← Prev / Next →** | Browse without making a decision. |
 | **Type / Min Hz / Max Hz / dB floor** | Redraw the spectrogram instantly. The audio player is not touched, so a clip keeps playing while you change the view. |
-| **Labels** (with `--multi-label`) | Give one segment several labels — two species singing at once. Pre-filled with the segment's own label; the drop-down adds to it instead of replacing it. |
-| **⟳** | Re-read the folder, e.g. after extracting more segments. |
+| **Labels** (with `--multi-label`) | Give one segment several labels — two species singing at once. Pre-filled with the segment's current label; the drop-down adds to it instead of replacing it. |
+| **⟳** | Re-read the folder, e.g. after more segments arrive. |
 | **Language** | Switch the interface between English and Português. |
+
+The drop-down offers every label already in use in the collection, plus anything
+you pass to `--labels`. It only fills the text box — you can always type a label
+that is not in the list.
 
 Keyboard: <kbd>←</kbd> <kbd>→</kbd> to browse, <kbd>T</kbd> / <kbd>F</kbd> for
 true/false, <kbd>Space</kbd> to play or pause, <kbd>Enter</kbd> to confirm a
 typed label, <kbd>Esc</kbd> to cancel.
 
-### What happens to the files
+### Where a verdict puts a clip
 
-Given the naming convention Step 5 writes,
-`SITE_YYYYMMDD_HHMMSS_START-ENDs_SCORE_LABEL.wav`:
+A reviewed clip **keeps the path it had**, with its label folder swapped for the
+one you confirmed. Nothing about its place in the collection is lost:
 
 ```
-segments/
-├── PONTO_A/BOAALB/PONTO_A_20240115_053000_12.0-17.0s_0.873_BOAALB.wav   ← waiting
-├── true/       PONTO_A_20240115_053000_12.0-17.0s_0.873_BOAALB.wav      ← confirmed
-├── false/TURDRU/PONTO_A_20240115_061500_3.5-8.5s_0.712_TURDRU.wav       ← corrected
-├── multi/      POCA_20240116_190000_40.0-45.0s_0.655_BOAALB_PHYLUT.wav  ← two labels
-├── segment_sources.csv   ← written by Step 5; maps each clip to its recording
-└── annotations.csv       ← written here, with --annotations
+PONTO_A/BOAALB/clip.wav
+   ├── ✔ True                    →  true/PONTO_A/BOAALB/clip.wav
+   ├── ✘ False, corrected TURDRU →  false/PONTO_A/TURDRU/clip.wav
+   └── two labels                →  multi/PONTO_A/BOAALB_PHYLUT/clip.wav
 ```
 
-- A segment given **more than one label** goes to `multi/` rather than
-  `true/` or `false/`, and carries every label in its name.
-- A name collision after renaming gets a `_2`, `_3`, … suffix — a reviewed file
-  is never overwritten.
+- File names are **left exactly as they were found** — the label lives in the
+  folder, so there is nothing in the name to correct.
+- A segment given **more than one label** goes to `multi/` rather than `true/` or
+  `false/`, under a folder naming every label.
+- A clip with no label folder is filed straight under `true/`, or under
+  `false/<label>/` once you name one.
+- A name collision gets a `_2`, `_3`, … suffix — a reviewed file is never
+  overwritten.
 - Clips already inside `true/`, `false/` or `multi/` are excluded from the
   pending list, so a review can be spread over several sessions.
 
@@ -125,15 +163,54 @@ segments/
 With `--annotations`, every reviewed segment is appended to a CSV with columns
 `site, file, label, start_time, end_time` — *true* segments with their own label,
 *false* ones with the corrected label, and one row per label when a segment has
-several. `file` is the **original recording** the clip was cut from, and the times
-are the clip's position inside it (padding included).
+several. The times are the clip's position inside the recording it was cut from,
+taken from its name and widened to the clip's real duration (so any padding is
+included).
 
-That link comes from `segment_sources.csv`, which Step 5 writes into the segments
-folder. Clips extracted before that file existed leave the `file` column empty
-until Step 5 is run again; the GUI says so under the buttons when it happens.
+`file` names that source recording. A clip's own name rarely says which recording
+it came from, so it is looked up in an optional `segment_sources.csv`
+(`segment,recording`) beside the segments; without one the column is left empty
+and the GUI says so under the buttons.
 
 Rows are written as each verdict is given, and an existing table is appended to,
 so reviews spread over several sessions add up.
+
+---
+
+## Reading other naming conventions
+
+`--filename-pattern` takes a preset or **any regular expression with named
+groups**. Recognised groups: `site`, `date`, `time`, `datetime`, `start`, `end`,
+`label`, `score`, `extra` — all optional, matched against the file name without
+its extension.
+
+```bash
+# label first, then site, then a 12-digit timestamp: BOAALB-siteA-202401150530.wav
+segment-reviewer ~/segments \
+    --filename-pattern '^(?P<label>[A-Z]+)-(?P<site>\w+)-(?P<datetime>\d{12})$' \
+    --datetime-format '%Y%m%d%H%M'
+```
+
+`--label-from` chooses where the label comes from: `folder` (the default),
+`filename` (the pattern's `label` group), or `none`. A pattern that captures a
+`label` group switches to `filename` on its own unless you say otherwise.
+
+### The vector-search preset
+
+`--filename-pattern vector-search` reads
+`SITE_YYYYMMDD_HHMMSS_START-ENDs_SCORE_LABEL.wav`, the names the bioacoustic
+vector-search notebooks write, with the **label and similarity score in the name**:
+
+```bash
+segment-reviewer ~/vector_search_segments --filename-pattern vector-search --annotations
+```
+
+Because the label lives in the name there, that mode behaves as the notebook
+does: clips are filed flat under `true/`, `false/<label>/` and `multi/`, and the
+**file name is rewritten** to carry the labels you confirmed — a segment
+corrected to `TURDRU` is saved as `..._0.873_TURDRU.wav`, one with two labels as
+`..._0.873_BOAALB_PHYLUT.wav` — so a name never keeps the wrong label. The score
+is shown next to the label in the GUI.
 
 ---
 
@@ -144,8 +221,8 @@ reading clips, moving them into the verdict folders, writing the annotation
 table. Clips are cached locally as they are opened, so scrolling back is instant.
 
 ```bash
-segment-reviewer ssh://user@fieldserver:22/data/vector_search_segments
-segment-reviewer fieldserver:/data/vector_search_segments      # scp-style
+segment-reviewer ssh://user@fieldserver:22/data/segments
+segment-reviewer fieldserver:/data/segments          # scp-style
 segment-reviewer ssh://fieldserver/data/segments --ssh-key ~/.ssh/id_field
 ```
 
@@ -164,7 +241,7 @@ The GUI is a normal web page, so the tool can run wherever the audio is and be
 used from anywhere:
 
 ```bash
-segment-reviewer /data/vector_search_segments --host 0.0.0.0 --port 8765 --no-open
+segment-reviewer /data/segments --host 0.0.0.0 --port 8765 --no-open
 ```
 
 When you bind a non-loopback address, an **access token** is generated and
@@ -195,8 +272,15 @@ segment-reviewer SEGMENTS [OPTIONS]
   SEGMENTS                      Local path, or ssh://[user@]host[:port]/path
 
   -l, --lang TEXT               Interface language at start: en, pt-BR  [default: en]
-      --labels TEXT             Drop-down labels, comma-separated. Blank → the labels
-                                the pending segments carry
+      --labels TEXT             Extra drop-down labels, comma-separated. The labels
+                                already in use in the collection are always offered
+      --label-from TEXT         Where a segment's label is read from: folder, filename
+                                or none  [default: folder]
+      --filename-pattern TEXT   'default', 'vector-search', or a regex with the named
+                                groups site, date, time, datetime, start, end, label,
+                                score, extra  [default: default]
+      --datetime-format TEXT    strptime format for the captured date and time
+                                [default: %Y%m%d%H%M%S]
       --multi-label             Allow several labels per segment (files under multi/)
       --annotations             Write the annotation table
       --annotations-path TEXT   Where it lives  [default: <SEGMENTS>/annotations.csv]
@@ -226,26 +310,14 @@ segment-reviewer SEGMENTS [OPTIONS]
 
 ### Verdict folder names and language
 
-The English notebook files clips under `true/` and `false/`; the Portuguese one
-under `verdadeiro/` and `falso/`. This tool follows whichever you start with
-(`--lang`), and **switching the language in the browser does not rename the
-folders** — a review split over two sessions stays in one consistent place.
-Override the names with `--true-dir` / `--false-dir` / `--multi-dir`.
+Starting in English files clips under `true/` and `false/`; starting in
+Portuguese, under `verdadeiro/` and `falso/`. **Switching the language in the
+browser does not rename the folders** — a review split over two sessions stays in
+one consistent place. Override the names with `--true-dir` / `--false-dir` /
+`--multi-dir`.
 
 Folders written under *either* convention are always excluded from the pending
 list, so a folder reviewed in English is not handed back for review in Portuguese.
-
----
-
-## Differences from the notebook
-
-The behaviour, file layout, naming and annotation format are the same. Two things
-differ because this is a web page rather than a Colab widget:
-
-- The label, score, site and time are shown as text above the spectrogram rather
-  than drawn into the image, so they stay crisp and re-localize instantly.
-- Spectrogram settings and the interface language are remembered in the browser
-  between sessions.
 
 ---
 
@@ -255,6 +327,9 @@ differ because this is a web page rather than a Colab widget:
 uv venv && uv pip install -e ".[dev]"
 uv run pytest
 ```
+
+The suite covers the naming rules, the verdict layouts, the HTTP API and a full
+review driven over an in-process SFTP server.
 
 ## License
 

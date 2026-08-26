@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ipaddress
 import os
+import re
 import secrets
 import socket
 import sys
@@ -16,6 +17,7 @@ import uvicorn
 
 from . import __version__, i18n
 from .config import ReviewConfig
+from .naming import DEFAULT_DATETIME_FORMAT, LABEL_SOURCES, PRESETS
 from .review import ReviewSession
 from .server import create_app
 from .storage import open_backend
@@ -24,11 +26,14 @@ cli = typer.Typer(
     add_completion=False,
     context_settings={"help_option_names": ["-h", "--help"]},
     help=(
-        "Review extracted audio segments in the browser — the notebook's "
-        "'Step 6 — Review Extracted Segments', as a standalone tool.\n\n"
+        "Review a folder of audio segments in the browser: listen to each clip, "
+        "look at its spectrogram, and mark it true or false.\n\n"
+        "By default a segment's label is the folder it sits in, and its file name "
+        "is read as [site]_[YYYYMMDD]_[HHMMSS]_[start]_[end]_* — both are "
+        "configurable with --label-from and --filename-pattern.\n\n"
         "SEGMENTS may be a local folder or a remote one over SSH:\n"
-        "  segment-reviewer /data/vector_search_segments\n"
-        "  segment-reviewer ssh://user@host/data/vector_search_segments"
+        "  segment-reviewer /data/segments\n"
+        "  segment-reviewer ssh://user@host/data/segments"
     ),
 )
 
@@ -39,6 +44,17 @@ def _version_callback(value: bool) -> None:
     if value:
         typer.echo(f"segment-reviewer {__version__}")
         raise typer.Exit()
+
+
+def _pattern_has_label(pattern: str) -> bool:
+    """True when the filename pattern captures a ``label`` group."""
+    for expr in PRESETS.get(pattern, (pattern,)):
+        try:
+            if "label" in re.compile(expr).groupindex:
+                return True
+        except re.error:
+            return False
+    return False
 
 
 def _is_loopback(host: str) -> bool:
@@ -73,6 +89,8 @@ def _summary(session: ReviewSession, config: ReviewConfig, t) -> str:
         (t("cli.already_true"), str(counts["true"])),
         (t("cli.already_false"), str(counts["false"])),
         (t("cli.already_multi"), str(counts["multi"])),
+        (t("cli.label_from"), config.label_from),
+        (t("cli.pattern"), config.filename_pattern),
         (t("cli.labels"), ", ".join(config.labels) if config.labels else t("cli.labels_none")),
         (t("cli.multi"), t("cli.on") if config.multi_label else t("cli.off")),
         (t("cli.annotations"),
@@ -100,7 +118,23 @@ def review(
     labels: str = typer.Option(
         "", "--labels",
         help="Labels offered in the drop-downs, comma-separated (e.g. 'BOAALB, PHYLUT, rain'). "
-             "Left blank, the labels carried by the pending segments are offered instead.",
+             "Left blank, the labels the pending segments already carry are offered instead.",
+    ),
+    label_from: Optional[str] = typer.Option(
+        None, "--label-from",
+        help="Where a segment's label is read from: 'folder' (the folder it sits in), "
+             "'filename' (captured by --filename-pattern) or 'none'.  [default: folder]",
+    ),
+    filename_pattern: str = typer.Option(
+        "default", "--filename-pattern",
+        help="How file names are read: 'default' for "
+             "[site]_[YYYYMMDD]_[HHMMSS]_[start]_[end]_*, 'vector-search' for names that "
+             "also carry a score and label, or a regular expression with any of the named "
+             "groups site, date, time, datetime, start, end, label, score, extra.",
+    ),
+    datetime_format: str = typer.Option(
+        DEFAULT_DATETIME_FORMAT, "--datetime-format",
+        help="strptime format for the date and time captured from a file name.",
     ),
     multi_label: bool = typer.Option(
         False, "--multi-label/--no-multi-label",
@@ -162,6 +196,20 @@ def review(
     """Open SEGMENTS in the browser reviewer."""
     if spec_type not in ("mel", "fft"):
         raise typer.BadParameter("must be 'mel' or 'fft'", param_hint="--spec-type")
+    if label_from is not None and label_from not in LABEL_SOURCES:
+        raise typer.BadParameter(
+            f"must be one of {', '.join(LABEL_SOURCES)}", param_hint="--label-from"
+        )
+    if filename_pattern not in PRESETS:
+        try:
+            re.compile(filename_pattern)
+        except re.error as exc:
+            raise typer.BadParameter(f"not a valid regular expression: {exc}",
+                                     param_hint="--filename-pattern") from exc
+    # A pattern that puts the label in the file name implies reading it from
+    # there, unless --label-from says otherwise.
+    if label_from is None:
+        label_from = "filename" if _pattern_has_label(filename_pattern) else "folder"
     language = i18n.normalize(lang)
     if language != lang:
         typer.secho(
@@ -175,6 +223,9 @@ def review(
         segments=segments,
         lang=language,
         labels=[x.strip() for x in labels.split(",") if x.strip()],
+        label_from=label_from,
+        filename_pattern=filename_pattern,
+        datetime_format=datetime_format,
         multi_label=multi_label,
         save_annotations=annotations,
         annotations_path=annotations_path,

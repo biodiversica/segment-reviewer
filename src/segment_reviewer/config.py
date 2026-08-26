@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-#: Verdict folder names per interface language, matching what each notebook writes.
+from .naming import DEFAULT_DATETIME_FORMAT
+
+#: Verdict folder names per interface language.
 VERDICT_DIRS: dict[str, dict[str, str]] = {
     "en": {"true": "true", "false": "false", "multi": "multi"},
     "pt-BR": {"true": "verdadeiro", "false": "falso", "multi": "multi"},
@@ -16,6 +18,8 @@ ALL_VERDICT_DIR_NAMES: set[str] = {
     name for mapping in VERDICT_DIRS.values() for name in mapping.values()
 }
 
+#: Optional manifest mapping each clip to the recording it was cut from. When a
+#: collection carries one, the annotation table can name that recording.
 SOURCES_CSV = "segment_sources.csv"
 ANNOTATION_COLUMNS = ["site", "file", "label", "start_time", "end_time"]
 
@@ -34,6 +38,12 @@ class ReviewConfig:
     segments: str = "."
     lang: str = "en"
     labels: list[str] = field(default_factory=list)
+
+    # How a segment's metadata is read
+    label_from: str = "folder"
+    filename_pattern: str = "default"
+    datetime_format: str = DEFAULT_DATETIME_FORMAT
+
     multi_label: bool = False
     save_annotations: bool = False
     annotations_path: str = ""

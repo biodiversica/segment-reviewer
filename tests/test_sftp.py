@@ -66,9 +66,11 @@ def test_a_full_review_over_ssh(remote):
     session.apply_verdict("true", ["BOAALB", "PHYLUT"])
 
     assert session.counts() == {"pending": 0, "true": 1, "false": 1, "multi": 1}
-    assert len(list((segments_dir / "true").glob("*.wav"))) == 1
-    assert len(list((segments_dir / "false" / "TURDRU").glob("*.wav"))) == 1
-    assert len(list((segments_dir / "multi").glob("*.wav"))) == 1
+    # Folder-derived labels: the clip keeps its path, with the label folder
+    # swapped for the one confirmed.
+    assert (segments_dir / "true" / "POCA" / "BOAALB").is_dir()
+    assert len(list((segments_dir / "false").rglob("TURDRU/*.wav"))) == 1
+    assert len(list((segments_dir / "multi").rglob("*.wav"))) == 1
 
     rows = list(csv.DictReader((segments_dir / "annotations.csv").open()))
     assert len(rows) == 4        # the multi-label clip contributes two rows
@@ -78,7 +80,7 @@ def test_a_full_review_over_ssh(remote):
 def test_rescan_picks_up_a_clip_added_remotely(remote):
     backend, segments_dir = remote
     session = ReviewSession(backend, ReviewConfig())
-    write_wav(segments_dir / "NEW" / "N_20240101_000000_0.0-5.0s_0.5_XXX.wav")
+    write_wav(segments_dir / "XXX" / "N_20240101_000000_0.0_5.0.wav")
     session.rescan()
     assert session.counts()["pending"] == 4
     assert "XXX" in session.label_choices()

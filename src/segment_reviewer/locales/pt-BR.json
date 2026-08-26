@@ -1,5 +1,8 @@
 {
-  "meta": { "name": "Português (Brasil)", "code": "pt-BR" },
+  "meta": {
+    "name": "Português (Brasil)",
+    "code": "pt-BR"
+  },
   "app": {
     "title": "Revisor de Segmentos",
     "subtitle": "Revisar segmentos extraídos"
@@ -22,7 +25,10 @@
     "score": "escore",
     "site": "ponto",
     "date": "data",
-    "unknown": "?"
+    "unknown": "?",
+    "folder": "pasta",
+    "extra": "extra",
+    "no_label": "sem rótulo"
   },
   "spec": {
     "type": "Tipo:",
@@ -64,8 +70,8 @@
     "off": "desligada",
     "no_path": "nenhum caminho definido — nada será salvo",
     "read_error": "não foi possível ler segment_sources.csv: {error}",
-    "norec": "{count} linha(s) sem gravação de origem: {why}; execute a Parte 5 de novo para regerá-lo",
-    "why_missing": "o segment_sources.csv não foi encontrado na pasta de segmentos",
+    "norec": "{count} linha(s) sem gravação de origem: {why}",
+    "why_missing": "não há segment_sources.csv na pasta de segmentos",
     "why_unlisted": "esses clipes não estão listados no segment_sources.csv",
     "multi_without_table": "Múltiplos rótulos está ligado, mas a tabela de anotações está desligada — os rótulos ficam registrados só nos nomes dos arquivos."
   },
@@ -104,6 +110,8 @@
     "serving": "Revisor rodando em",
     "network_hint": "Acessível de outras máquinas nesta rede / Tailscale.",
     "token_hint": "É preciso token de acesso — abra a URL acima, ela já leva o token.",
-    "stop_hint": "Pressione Ctrl+C para parar."
+    "stop_hint": "Pressione Ctrl+C para parar.",
+    "label_from": "Origem do rótulo",
+    "pattern": "Padrão do nome"
   }
 }

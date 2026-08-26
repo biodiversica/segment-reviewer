@@ -8,7 +8,7 @@ from pathlib import Path
 
 from .annotations import AnnotationTable, segment_bounds
 from .config import ALL_VERDICT_DIR_NAMES, ReviewConfig
-from .naming import name_with_labels, nfc, parse, slug, split_labels
+from .naming import SegmentParser, nfc, slug, split_labels
 from .spectrogram import SpectrogramError, duration_seconds, render
 from .storage import Backend
 
@@ -21,12 +21,17 @@ class SegmentView:
     total: int
     name: str
     relpath: str
+    #: Folders between the segments root and the clip, as one path.
+    folder: str
     label: str
-    score: float | None
+    #: Where that label came from: "folder", "filename" or "" when it has none.
+    label_from: str
     site: str | None
     recorded_at: str | None
     det_start: float | None
     det_end: float | None
+    score: float | None
+    extra: str | None
 
 
 class ReviewSession:
@@ -41,6 +46,11 @@ class ReviewSession:
         self.backend = backend
         self.config = config
         self.dirs = config.resolved_verdict_dirs()
+        self.parser = SegmentParser(
+            pattern=config.filename_pattern,
+            label_from=config.label_from,
+            datetime_format=config.datetime_format,
+        )
         self._lock = threading.RLock()
         self._ensure_dirs()
         self.annotations = AnnotationTable(
@@ -123,18 +133,24 @@ class ReviewSession:
             if not self.segments:
                 return None
             path = self.segments[self.index]
-            info = parse(path)
+            info = self._parse(path)
+            relpath = self.backend.relpath(path, self.backend.root)
+            folder = self.backend.dirname(relpath).replace(self.backend.sep, "/")
             return SegmentView(
                 index=self.index,
                 total=len(self.segments),
                 name=self.backend.basename(path),
-                relpath=self.backend.relpath(path, self.backend.root),
+                relpath=relpath.replace(self.backend.sep, "/"),
+                folder=folder,
                 label=info.label,
-                score=info.score,
+                label_from=("filename" if info.label_in_filename
+                            else ("folder" if info.label else "")),
                 site=info.site,
                 recorded_at=info.recorded_at.strftime("%Y-%m-%d %H:%M:%S") if info.recorded_at else None,
                 det_start=info.det_start,
                 det_end=info.det_end,
+                score=info.score,
+                extra=info.extra,
             )
 
     def navigate(self, delta: int) -> None:
@@ -148,42 +164,75 @@ class ReviewSession:
             if self.segments:
                 self.index = max(0, min(len(self.segments) - 1, index))
 
+    def _parse(self, path: str):
+        return self.parser.parse(path, self.backend.root)
+
     # ── labels offered in the drop-downs ─────────────────────────────────────
     def label_choices(self) -> list[str]:
-        """Configured labels first, then the labels the pending clips carry.
+        """Configured labels first, then every label the pending clips carry.
 
-        Mirrors the notebook: with no ``--labels`` given, the drop-down offers
-        every label the segments waiting for review actually have. A score in the
-        name is the marker of a label the extraction step wrote.
+        With no ``--labels`` given, the drop-down is built from the collection
+        itself — the folder names in folder mode, the labels in the file names in
+        filename mode — so a reviewer can always reach the classes already in use.
         """
         chosen = [nfc(x).strip() for x in self.config.labels if str(x).strip()]
         with self._lock:
             pending = list(self.segments)
-        extra = sorted({
+        found = sorted({
             nfc(info.label).strip()
-            for info in map(parse, pending)
-            if info.score is not None and str(info.label).strip()
+            for info in map(self._parse, pending)
+            if str(info.label).strip()
         })
-        for label in extra:
+        for label in found:
             if label not in chosen:
                 chosen.append(label)
         return chosen
 
     # ── verdicts ─────────────────────────────────────────────────────────────
-    def apply_verdict(self, verdict: str, labels: list[str] | None = None) -> dict:
-        """File the current segment under its verdict and drop it from the list.
+    def _destination_dir(self, info, verdict: str, final: list[str]) -> str:
+        """Where a segment goes once a verdict is given.
 
         A clip carrying several labels belongs to no single true/false folder, so
-        it goes to ``multi/`` and lists every label in its file name instead.
+        it goes to the multi folder either way. Beyond that the layout follows
+        where the label lives:
+
+        * **Label in a folder** (the default) — the clip keeps the path it had,
+          with its label folder swapped for the one the reviewer confirmed:
+          ``PONTO_A/BOAALB/x.wav`` accepted stays ``true/PONTO_A/BOAALB/x.wav``,
+          and corrected to TURDRU becomes ``false/PONTO_A/TURDRU/x.wav``. Nothing
+          about the clip's place in the collection is lost by reviewing it.
+        * **Label in the file name** — the name already carries the verdict's
+          label, so the clip is filed flat under the verdict folder, with one
+          subfolder per label for rejections.
         """
+        bucket = "multi" if len(final) > 1 else verdict
+        verdict_root = self.backend.join(self.backend.root, self.dirs[bucket])
+
+        if info.label_in_filename:
+            if bucket == "false" and final:
+                return self.backend.join(verdict_root, slug(final[0]))
+            return verdict_root
+
+        # The folders above the label are kept exactly as they are on disk; only
+        # the label the reviewer typed is made safe for a file name.
+        parts = list(info.prefix)
+        label_folder = "_".join(slug(x) for x in final if str(x).strip())
+        if label_folder:
+            parts.append(label_folder)
+        return self.backend.join(verdict_root, *parts) if parts else verdict_root
+
+    def apply_verdict(self, verdict: str, labels: list[str] | None = None) -> dict:
+        """File the current segment under its verdict and drop it from the list."""
         if verdict not in ("true", "false"):
             raise ValueError(f"unknown verdict: {verdict}")
         with self._lock:
             if not self.segments:
                 return {"moved": None}
             src = self.segments.pop(self.index)
-            info = parse(src)
-            final = [x for x in (labels or []) if str(x).strip()] or [info.label]
+            info = self._parse(src)
+            final = [x for x in (labels or []) if str(x).strip()]
+            if not final and info.label:
+                final = [info.label]
 
             # Read the clip before moving it: it has to be on disk to be measured.
             start_s = end_s = None
@@ -195,17 +244,11 @@ class ReviewSession:
                     duration = None
                 start_s, end_s = segment_bounds(duration, info.det_start, info.det_end)
 
-            if len(final) > 1:
-                folder = self.backend.join(self.backend.root, self.dirs["multi"])
-            elif verdict == "false":
-                folder = self.backend.join(
-                    self.backend.root, self.dirs["false"], slug(final[0])
-                )
-            else:
-                folder = self.backend.join(self.backend.root, self.dirs["true"])
-
+            folder = self._destination_dir(info, verdict, final)
             self.backend.makedirs(folder)
-            filename = name_with_labels(self.backend.basename(src), final)
+            # Only a name that carries its own label is rewritten; where the label
+            # lives in the folder the file name is left exactly as it was found.
+            filename = self.parser.replace_label(self.backend.basename(src), final)
             dest = self.backend.free_path(folder, filename)
             try:
                 self.backend.move(src, dest)
