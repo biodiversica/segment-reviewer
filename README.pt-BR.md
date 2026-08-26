@@ -4,22 +4,16 @@
 
 Uma ferramenta de linha de comando que serve uma **interface no navegador para
 revisar uma pasta de segmentos de áudio**. Cada clipe aparece como espectrograma,
-com o que sua pasta e seu nome de arquivo disserem sobre ele; você escuta e marca
+com o que sua pasta e seu nome de arquivo demonstram sobre ele; você escuta e marca
 como **Verdadeiro** (correto) ou **Falso** (errado, com o rótulo correto). Os
 clipes revisados são movidos para `verdadeiro/`, `falso/` ou `multi/` dentro da
 pasta de segmentos e, opcionalmente, registrados numa tabela de anotações.
 
 Funciona com qualquer conjunto de clipes, não importa como tenham sido gerados —
 a saída de um detector, exemplos recortados à mão, as previsões de um
-classificador a validar. A pasta de segmentos pode ser **local** ou **remota via
+classificador a ser ser avalido. A pasta de segmentos pode ser **local** ou **remota via
 SSH**, e a interface pode ser servida para **outra máquina** na sua rede local ou
-Tailscale. A interface está disponível em **Português (Brasil)** e **Inglês**,
-com troca durante o uso.
-
-> Ela também encaixa direto no fluxo dos
-> [notebooks de busca vetorial bioacústica](https://github.com/biodiversica/bioacoustic-ipynbs),
-> como substituta independente da etapa *Revisar segmentos extraídos* — veja
-> [Outras convenções de nome](#outras-convenções-de-nome).
+Tailscale. A interface está disponível em **Português (Brasil)** e **Inglês**.
 
 ---
 
@@ -48,7 +42,7 @@ diretamente na pasta de segmentos simplesmente ainda não tem rótulo.
       PONTO_A_20240115_053000_12.0_17.0_det1.wav
 ```
 
-- O ponto pode conter underscores — a leitura se ancora na data e na hora.
+- O ponto pode conter underscores — a referência é na data e na hora.
 - `início`/`fim` são a posição do clipe, em segundos, dentro da gravação de onde
   ele foi cortado. Os dois separadores funcionam: `12.0_17.0` e `12.0-17.0s`.
 - `_*` é qualquer outra coisa, mostrada na interface como *extra*.
@@ -124,7 +118,7 @@ imprime o endereço que as outras máquinas devem usar.
 | **✔ Verdadeiro** | O rótulo está certo. O clipe mantém seu caminho, sob `verdadeiro/`. |
 | **✘ Falso** | Errado. Arquivado sob a mesma seleção, em `falso/` em vez de `verdadeiro/` — então marque o(s) rótulo(s) correto(s) antes de apertar. Sem nada marcado, o clipe vai para `falso/desconhecido/`. |
 | **← Anterior / Próximo →** | Navega sem decidir nada. |
-| **Tipo / Hz mín / Hz máx / dB** | Redesenha o espectrograma na hora — eixo de frequência em mel, em Hz linear ou em Hz logarítmico. O player de áudio não é afetado, então o clipe continua tocando enquanto você muda a visualização. |
+| **Tipo / Hz mín / Hz máx / dB** | Atualiza o espectrograma na hora — eixo de frequência em mel, em Hz linear ou em Hz logarítmico. O player de áudio não é afetado, então o clipe continua tocando enquanto você muda a visualização. |
 | **✎** | Edita a própria lista de rótulos: cada botão ganha um **×** para removê-lo, e a caixa abaixo adiciona um novo. As mudanças são salvas em `labels.txt`, na pasta de segmentos. |
 | **⟳** | Relê a pasta, por exemplo quando chegam mais segmentos. |
 | **Idioma** | Alterna a interface entre Português e Inglês. |
@@ -149,15 +143,15 @@ rótulo por linha. Na primeira vez que um conjunto é aberto, a lista é semeada
 daí é ele que manda, e você o edita pela interface (ou à mão — linhas em branco e
 comentários com `#` são ignorados).
 
-Nada é acrescentado pelas suas costas: uma releitura que encontre uma pasta nova
-não empurra o nome dela para a lista. Enxugar a lista também é seguro — o rótulo
+Nada é acrescentado automaticamente: uma releitura que encontre uma pasta nova
+não adiciona o nome dela para a lista. Reduzir a lista também é seguro — o rótulo
 do próprio clipe sempre aparece como botão, esteja ou não na lista, e digitar um
-nome na caixa o adiciona à lista e o marca no segmento em tela de uma vez.
+nome na caixa o adiciona à lista e o marca no segmento em visualização de uma vez.
 
 Use `--labels-file` para guardar a lista em outro lugar, ou `--no-labels-file`
 para que as edições valham só naquela sessão.
 
-### Para onde um veredito leva o clipe
+### Onde o clipe é salvo após revisão?
 
 Um clipe revisado **mantém o caminho que tinha**, com a pasta do rótulo trocada
 pela que você confirmou. Nada da sua posição no conjunto se perde:

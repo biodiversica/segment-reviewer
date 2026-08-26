@@ -13,13 +13,7 @@ It works on any collection of clips, however they were produced — a detector's
 output, hand-cut examples, a classifier's predictions to be validated. The
 segments folder can be **local** or **remote over SSH**, and the GUI can be
 served to **another machine** on your LAN or Tailscale network. The interface is
-available in **English** and **Português (Brasil)**, switchable while you work.
-
-> It also drops straight into the workflow of the
-> [bioacoustic vector-search notebooks](https://github.com/biodiversica/bioacoustic-ipynbs)
-> as a standalone replacement for their *Review Extracted Segments* step — see
-> [Reading other naming conventions](#reading-other-naming-conventions).
-
+available in **English** and **Português (Brasil)**.
 ---
 
 ## How a segment is read
