@@ -349,7 +349,18 @@ uv run pytest
 ```
 
 The suite covers the naming rules, the verdict layouts, the HTTP API and a full
-review driven over an in-process SFTP server.
+review driven over an in-process SFTP server. The client's DOM-free helpers run
+under node, and skip themselves when node is not installed.
+
+Before pushing, it is worth one run as CI sees it:
+
+```bash
+GITHUB_ACTIONS=true uv run pytest
+```
+
+Rich colours Typer's help whenever it believes it is on a terminal, and it always
+believes so on GitHub Actions — which changes the rendered output enough to break
+a test that passes locally.
 
 ## License
 

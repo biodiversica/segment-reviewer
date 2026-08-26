@@ -351,7 +351,18 @@ uv run pytest
 ```
 
 A suíte cobre as regras de nome, os layouts de veredito, a API HTTP e uma revisão
-completa conduzida por um servidor SFTP em processo.
+completa conduzida por um servidor SFTP em processo. Os helpers sem DOM do cliente
+rodam no node, e se pulam sozinhos quando o node não está instalado.
+
+Antes de dar push, vale uma rodada como a CI enxerga:
+
+```bash
+GITHUB_ACTIONS=true uv run pytest
+```
+
+O rich colore a ajuda do Typer sempre que acha que está num terminal, e no GitHub
+Actions ele sempre acha — o que muda a saída renderizada o bastante para quebrar
+um teste que passa localmente.
 
 ## Licença
 

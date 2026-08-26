@@ -1,3 +1,6 @@
+import re
+
+from typer.main import get_command
 from typer.testing import CliRunner
 
 from segment_reviewer import __version__
@@ -5,20 +8,56 @@ from segment_reviewer.cli import _is_loopback, _pattern_has_label, cli
 
 runner = CliRunner()
 
+_ANSI = re.compile(r"\x1b\[[0-9;]*[a-zA-Z]")
+
+
+def plain(text: str) -> str:
+    """Rendered output with its colour codes removed.
+
+    Typer draws its help through rich, which colours the output whenever it
+    thinks it is on a terminal — on GitHub Actions it always does. That splits a
+    switch like ``--lang`` across escape sequences, so raw text is not something
+    to assert against.
+    """
+    return _ANSI.sub("", text)
+
+
+def declared_options() -> set[str]:
+    """Every switch the command actually accepts, whatever the help looks like."""
+    names: set[str] = set()
+    for param in get_command(cli).params:
+        names.update(param.opts)
+        names.update(param.secondary_opts)
+    return names
+
 
 def test_version():
     result = runner.invoke(cli, ["--version"])
     assert result.exit_code == 0
-    assert __version__ in result.stdout
+    assert __version__ in plain(result.stdout)
 
 
-def test_help_lists_the_main_options():
-    # A wide terminal, so the help does not truncate the longer flag names.
-    result = runner.invoke(cli, ["--help"], env={"COLUMNS": "220"})
+def test_help_renders():
+    result = runner.invoke(cli, ["--help"])
     assert result.exit_code == 0
+    assert "Usage" in plain(result.stdout)
+    assert "SEGMENTS" in plain(result.stdout)
+
+
+def test_the_documented_options_are_all_accepted():
+    """Checked against the command, not its rendering, which rich reflows and
+    truncates depending on the terminal it believes it is writing to."""
+    names = declared_options()
     for flag in ("--lang", "--labels", "--label-from", "--filename-pattern",
-                 "--multi-label", "--annotations", "--host", "--token", "--ssh-key"):
-        assert flag in result.stdout
+                 "--datetime-format", "--multi-label", "--no-multi-label",
+                 "--labels-file", "--no-labels-file", "--annotations",
+                 "--annotations-path", "--spec-type", "--fmin", "--fmax",
+                 "--db-floor", "--true-dir", "--false-dir", "--multi-dir",
+                 "--host", "--port", "--token", "--no-auth", "--open", "--no-open",
+                 "--ssh-user", "--ssh-port", "--ssh-key", "--ssh-password",
+                 "--known-hosts", "--accept-new-host-key", "--cache-dir",
+                 "--version"):
+        assert flag in names, flag
 
 
 def test_missing_folder_exits_with_an_error(tmp_path):
