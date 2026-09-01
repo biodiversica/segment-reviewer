@@ -14,6 +14,7 @@ output, hand-cut examples, a classifier's predictions to be validated. The
 segments folder can be **local** or **remote over SSH**, and the GUI can be
 served to **another machine** on your LAN or Tailscale network. The interface is
 available in **English** and **Português (Brasil)**.
+
 ---
 
 ## How a segment is read
