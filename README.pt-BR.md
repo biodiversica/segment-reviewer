@@ -21,7 +21,7 @@ Tailscale. A interface está disponível em **Português (Brasil)** e **Inglês*
 
 Duas fontes independentes, ambas configuráveis:
 
-**A pasta dá o rótulo.** Um conjunto revisado costuma ser organizado com uma
+**O nome da pasta fornece o rótulo.** Um conjunto revisado costuma ser organizado com uma
 pasta por classe, então a pasta em que o clipe está é o rótulo que ele carrega:
 
 ```
@@ -35,7 +35,7 @@ As pastas acima do rótulo são mantidas como estão — `2024/campo/PONTO_A/BOA
 rotula o clipe como `BOAALB` e lembra das três pastas acima dele. Um clipe
 diretamente na pasta de segmentos simplesmente ainda não tem rótulo.
 
-**O nome do arquivo dá o resto.** Por padrão ele é lido como
+**O nome do arquivo fornece o resto das informações.** Por padrão um arquivo de áudio é lido como
 
 ```
 [ponto]_[AAAAMMDD]_[HHMMSS]_[início]_[fim]_*
@@ -124,12 +124,10 @@ imprime o endereço que as outras máquinas devem usar.
 | **Idioma** | Alterna a interface entre Português e Inglês. |
 
 Os dois vereditos leem a mesma seleção — os botões dizem *o que* o clipe é, e
-Verdadeiro ou Falso só diz em qual pasta ele cai. Cada segmento é uma passada só:
-ajuste os rótulos se for preciso, aperte um veredito, e o próximo clipe já está
-na tela.
+Verdadeiro ou Falso só diz em qual pasta ele será salvo. Após a conclusão da revisão do clipe, o mesmo é removido da lista de revisão e o próximo clipe aparecerá automaticamente. 
 
 Um segmento pode receber vários rótulos — duas espécies cantando ao mesmo tempo —
-o que é o padrão; `--no-multi-label` limita cada segmento a um rótulo.
+o que é o padrão; `--no-multi-label` limita cada segmento a um rótulo. Você pode ajustar os rótulos disponíveis quando for necessário.
 
 Teclado: <kbd>←</kbd> <kbd>→</kbd> para navegar, <kbd>T</kbd> / <kbd>F</kbd> para
 verdadeiro/falso, <kbd>1</kbd>…<kbd>9</kbd> para marcar os nove primeiros
@@ -137,11 +135,10 @@ rótulos, <kbd>Espaço</kbd> para tocar ou pausar.
 
 ### A lista de rótulos
 
-Os botões vêm de uma lista guardada em **`labels.txt`**, na pasta de segmentos, um
-rótulo por linha. Na primeira vez que um conjunto é aberto, a lista é semeada com
+Os rótulos disponíveis vêm de uma lista salva em **`labels.txt`**, na pasta de segmentos, um
+rótulo por linha. Na primeira vez que um conjunto é aberto, a lista é criada/atualizada com
 `--labels` e com os rótulos que o conjunto já usa, e o arquivo é gravado; a partir
-daí é ele que manda, e você o edita pela interface (ou à mão — linhas em branco e
-comentários com `#` são ignorados).
+daí a referência principal é este arquivo, e você o edita pela interface (ou à mão — linhas em branco e comentários com `#` são ignorados).
 
 Nada é acrescentado automaticamente: uma releitura que encontre uma pasta nova
 não adiciona o nome dela para a lista. Reduzir a lista também é seguro — o rótulo
