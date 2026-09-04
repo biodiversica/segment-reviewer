@@ -97,7 +97,7 @@ Python 3.10 ou mais novo. A parte de áudio (librosa, soundfile) precisa da
 # Pasta local, interface nesta máquina
 segment-reviewer ~/segmentos --lang pt-BR
 
-# Rótulos extras na lista suspensa e tabela de anotações
+# Lista suspensa restrita a estes rótulos e tabela de anotações
 segment-reviewer ~/segmentos --lang pt-BR --labels "BOAALB, PHYLUT, chuva" --annotations
 
 # Segmentos num servidor, revisados do seu notebook
@@ -136,9 +136,12 @@ rótulos, <kbd>Espaço</kbd> para tocar ou pausar.
 ### A lista de rótulos
 
 Os rótulos disponíveis vêm de uma lista salva em **`labels.txt`**, na pasta de segmentos, um
-rótulo por linha. Na primeira vez que um conjunto é aberto, a lista é criada/atualizada com
-`--labels` e com os rótulos que o conjunto já usa, e o arquivo é gravado; a partir
+rótulo por linha. Na primeira vez que um conjunto é aberto, a lista é criada com
+os rótulos que o conjunto já usa, e o arquivo é gravado; a partir
 daí a referência principal é este arquivo, e você o edita pela interface (ou à mão — linhas em branco e comentários com `#` são ignorados).
+
+Iniciar com `--labels` define outra coisa: só aqueles rótulos são oferecidos na
+sessão, no lugar do que estiver no arquivo, e é essa lista que passa a ser gravada.
 
 Nada é acrescentado automaticamente: uma releitura que encontre uma pasta nova
 não adiciona o nome dela para a lista. Reduzir a lista também é seguro — o rótulo
@@ -287,8 +290,8 @@ segment-reviewer SEGMENTOS [OPÇÕES]
   SEGMENTOS                     Caminho local, ou ssh://[usuário@]host[:porta]/caminho
 
   -l, --lang TEXT               Idioma inicial da interface: en, pt-BR  [padrão: en]
-      --labels TEXT             Rótulos para semear a lista, separados por vírgulas.
-                                Sempre incorporados a uma lista já gravada
+      --labels TEXT             Os únicos rótulos oferecidos, separados por vírgulas.
+                                Substitui uma lista já gravada
       --labels-file TEXT        Onde a lista fica, um rótulo por linha
                                 [padrão: <SEGMENTOS>/labels.txt]
       --no-labels-file          Não lê nem grava a lista; as edições valem só na sessão

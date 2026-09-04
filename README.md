@@ -97,7 +97,7 @@ which ships with the wheels on Linux, macOS and Windows.
 # A local folder, GUI on this machine
 segment-reviewer ~/segments
 
-# Portuguese interface, extra drop-down labels, annotation table
+# Portuguese interface, a fixed set of drop-down labels, annotation table
 segment-reviewer ~/segments --lang pt-BR --labels "BOAALB, PHYLUT, chuva" --annotations
 
 # Segments on a server, reviewed from your laptop
@@ -138,10 +138,14 @@ true/false, <kbd>1</kbd>…<kbd>9</kbd> to toggle the first nine labels,
 ### The label list
 
 The buttons come from a list kept in **`labels.txt`** in the segments folder, one
-label per line. The first time a collection is opened the list is seeded from
-`--labels` and from the labels the collection already uses, and written out; from
-then on that file *is* the list, and you edit it from the GUI (or by hand — blank
-lines and `#` comments are ignored).
+label per line. The first time a collection is opened the list is seeded from the
+labels the collection already uses, and written out; from then on that file *is*
+the list, and you edit it from the GUI (or by hand — blank lines and `#` comments
+are ignored).
+
+Starting with `--labels` says what to offer instead: those are the only buttons
+the session opens with, replacing whatever the file holds, and they are written
+out in its place.
 
 Nothing is ever added back behind your back: a rescan that finds a new folder
 does not push its name onto the list. Trimming the list is safe, too — a clip's
@@ -288,8 +292,8 @@ segment-reviewer SEGMENTS [OPTIONS]
   SEGMENTS                      Local path, or ssh://[user@]host[:port]/path
 
   -l, --lang TEXT               Interface language at start: en, pt-BR  [default: en]
-      --labels TEXT             Labels to seed the list with, comma-separated. Always
-                                folded into a stored list
+      --labels TEXT             The only labels offered, comma-separated. Replaces a
+                                stored list
       --labels-file TEXT        Where the label list is kept, one per line
                                 [default: <SEGMENTS>/labels.txt]
       --no-labels-file          Do not read or write it; edits last for this session

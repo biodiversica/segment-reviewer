@@ -1,10 +1,14 @@
 """The list of labels the reviewer offers, and where it is kept.
 
-Seeded on first run from ``--labels`` and from the labels the collection already
-uses, then stored as one label per line in a text file beside the segments, so a
-list built up while reviewing survives a restart — and, for a remote folder, is
-shared by whoever opens it next. Once that file exists it *is* the list: the
-reviewer edits it from the GUI, and nothing is added back behind their back.
+Seeded on first run from the labels the collection already uses, then stored as
+one label per line in a text file beside the segments, so a list built up while
+reviewing survives a restart — and, for a remote folder, is shared by whoever
+opens it next. Once that file exists it *is* the list: the reviewer edits it from
+the GUI, and nothing is added back behind their back.
+
+``--labels`` overrides both: naming labels on the command line is an explicit
+choice of what to offer, so those are the whole list the session starts with,
+replacing anything stored, and are written out in turn.
 
 A clip's own label and anything typed into the box are always available whether
 or not they are on the list, so a trimmed list never blocks a verdict.
@@ -43,16 +47,20 @@ class LabelStore:
         self.path = path if persist else ""
         self.error = ""
         stored = self._read()
-        if stored is None:
-            # First run: the CLI's labels first, then those the collection uses.
-            self._labels = merge(configured, discovered)
-            self._save()
-        else:
-            # The file is the list; labels named on the command line are an
-            # explicit request, so they are folded in on top of it.
-            self._labels = merge(stored, configured)
+        asked_for = merge(configured)
+        if asked_for:
+            # Labels named on the command line are the list for this run: only
+            # those are offered, whatever the collection uses or the file holds.
+            self._labels = asked_for
             if self._labels != stored:
                 self._save()
+        elif stored is None:
+            # First run: the labels the collection already uses.
+            self._labels = merge(discovered)
+            self._save()
+        else:
+            # From then on the file is the list.
+            self._labels = stored
 
     # ── reading ──────────────────────────────────────────────────────────────
     @property

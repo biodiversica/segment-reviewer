@@ -7,7 +7,7 @@ from segment_reviewer.server import create_app
 
 @pytest.fixture
 def client(segments_dir):
-    session = make_session(segments_dir, labels=["rain"])
+    session = make_session(segments_dir, labels=["rain", "BOAALB", "PHYLUT"])
     return TestClient(create_app(session, session.config, token=None)), session
 
 

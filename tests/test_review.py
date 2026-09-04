@@ -34,9 +34,9 @@ def test_label_choices_are_the_folder_names(session):
     assert session.label_choices() == ["BOAALB", "PHYLUT"]
 
 
-def test_label_choices_put_configured_labels_first(segments_dir):
+def test_configured_labels_are_the_only_ones_offered(segments_dir):
     session = make_session(segments_dir, labels=["rain", "BOAALB"])
-    assert session.label_choices() == ["rain", "BOAALB", "PHYLUT"]
+    assert session.label_choices() == ["rain", "BOAALB"]
 
 
 # ── where a verdict files a clip ─────────────────────────────────────────────
@@ -203,9 +203,9 @@ def test_a_blank_annotations_path_falls_back_inside_the_segments_folder(segments
 
 # ── the editable label list ──────────────────────────────────────────────────
 def test_the_list_is_seeded_from_the_collection_and_written(segments_dir):
-    session = make_session(segments_dir, labels=["chuva"])
-    assert session.label_choices() == ["chuva", "BOAALB", "PHYLUT"]
-    assert (segments_dir / "labels.txt").read_text().split() == ["chuva", "BOAALB", "PHYLUT"]
+    session = make_session(segments_dir)
+    assert session.label_choices() == ["BOAALB", "PHYLUT"]
+    assert (segments_dir / "labels.txt").read_text().split() == ["BOAALB", "PHYLUT"]
 
 
 def test_a_stored_list_wins_over_what_the_collection_uses(segments_dir):
@@ -214,11 +214,11 @@ def test_a_stored_list_wins_over_what_the_collection_uses(segments_dir):
     assert session.label_choices() == ["rain", "TURDRU"]
 
 
-def test_labels_named_on_the_command_line_are_folded_into_a_stored_list(segments_dir):
+def test_labels_named_on_the_command_line_replace_a_stored_list(segments_dir):
     (segments_dir / "labels.txt").write_text("rain\n", encoding="utf-8")
     session = make_session(segments_dir, labels=["chuva"])
-    assert session.label_choices() == ["rain", "chuva"]
-    assert (segments_dir / "labels.txt").read_text().split() == ["rain", "chuva"]
+    assert session.label_choices() == ["chuva"]
+    assert (segments_dir / "labels.txt").read_text().split() == ["chuva"]
 
 
 def test_comments_and_blank_lines_are_ignored(segments_dir):

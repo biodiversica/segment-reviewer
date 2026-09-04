@@ -120,8 +120,10 @@ def review(
     ),
     labels: str = typer.Option(
         "", "--labels",
-        help="Labels offered in the drop-downs, comma-separated (e.g. 'BOAALB, PHYLUT, rain'). "
-             "Left blank, the labels the pending segments already carry are offered instead.",
+        help="The only labels offered in the drop-downs, comma-separated "
+             "(e.g. 'BOAALB, PHYLUT, rain'); a stored list is replaced by them. "
+             "Left blank, the stored list is used, or the labels the pending "
+             "segments already carry when there is none yet.",
     ),
     label_from: Optional[str] = typer.Option(
         None, "--label-from",
