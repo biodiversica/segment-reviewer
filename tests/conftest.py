@@ -49,6 +49,17 @@ VECTOR_SEARCH_LAYOUT = [
 ]
 
 
+#: A shape no preset fits: a T in the stamp, a literal REC, label before score,
+#: and the class folder on top. Read with a --filename-pattern template.
+TEMPLATED_LAYOUT = [
+    ("BOAALB/PONTO_A_20240115", "PONTO_A_20240115T053000_REC_12.0_17.0_BOAALB_0.873.wav"),
+    ("PHYLUT/PONTO_A_20240115", "PONTO_A_20240115T061500_REC_3.5_8.5_PHYLUT_0.712.wav"),
+]
+
+#: The template that reads it.
+TEMPLATE = "[site]_YYYYMMDDTHHMMSS_REC_[start_time]_[end_time]_[label]_[score]"
+
+
 def build_folder(root: Path, layout, manifest_for=(0,)) -> Path:
     """Write a segments folder, and a source manifest naming some of the clips."""
     for folder, name in layout:
@@ -64,6 +75,11 @@ def build_folder(root: Path, layout, manifest_for=(0,)) -> Path:
 @pytest.fixture
 def segments_dir(tmp_path):
     return build_folder(tmp_path / "segments", DEFAULT_LAYOUT)
+
+
+@pytest.fixture
+def templated_dir(tmp_path):
+    return build_folder(tmp_path / "templated", TEMPLATED_LAYOUT, manifest_for=())
 
 
 @pytest.fixture

@@ -17,7 +17,13 @@ import uvicorn
 
 from . import __version__, i18n
 from .config import DEFAULT_LABELS_FILE, ReviewConfig
-from .naming import DEFAULT_DATETIME_FORMAT, LABEL_SOURCES, PRESETS
+from .naming import (
+    DEFAULT_DATETIME_FORMAT,
+    LABEL_SOURCES,
+    PRESETS,
+    TEMPLATE_FIELDS,
+    expressions,
+)
 from .review import ReviewSession
 from .server import create_app
 from .spectrogram import SPEC_TYPES
@@ -49,7 +55,11 @@ def _version_callback(value: bool) -> None:
 
 def _pattern_has_label(pattern: str) -> bool:
     """True when the filename pattern captures a ``label`` group."""
-    for expr in PRESETS.get(pattern, (pattern,)):
+    try:
+        exprs = expressions(pattern)
+    except ValueError:
+        return False
+    for expr in exprs:
         try:
             if "label" in re.compile(expr).groupindex:
                 return True
@@ -139,10 +149,12 @@ def review(
     ),
     filename_pattern: str = typer.Option(
         "default", "--filename-pattern",
-        help="How file names are read: 'default' for "
-             "[site]_[YYYYMMDD]_[HHMMSS]_[start]_[end]_*, 'vector-search' for names that "
-             "also carry a score and label, or a regular expression with any of the named "
-             "groups site, date, time, datetime, start, end, label, score, extra.",
+        help="How file names are read: a preset ('default' for "
+             "[site]_YYYYMMDD_HHMMSS_[start]_[end]_*, 'vector-search' for names that also "
+             "carry a score and label), a template naming the parts in brackets — e.g. "
+             "'[site]_YYYYMMDDTHHMMSS_REC_[start]_[end]_[label]_[score]', where * matches "
+             "anything and everything outside the brackets is literal — or a regular "
+             f"expression using the named groups {', '.join(TEMPLATE_FIELDS)}.",
     ),
     datetime_format: str = typer.Option(
         DEFAULT_DATETIME_FORMAT, "--datetime-format",
@@ -230,7 +242,10 @@ def review(
         )
     if filename_pattern not in PRESETS:
         try:
-            re.compile(filename_pattern)
+            for expr in expressions(filename_pattern):
+                re.compile(expr)
+        except ValueError as exc:      # a template with a typo in it
+            raise typer.BadParameter(str(exc), param_hint="--filename-pattern") from exc
         except re.error as exc:
             raise typer.BadParameter(f"not a valid regular expression: {exc}",
                                      param_hint="--filename-pattern") from exc

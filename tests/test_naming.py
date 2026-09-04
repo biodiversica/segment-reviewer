@@ -139,6 +139,77 @@ def test_underscores_in_a_captured_label_become_spaces(vs):
     assert info.label == "Rufous Hornero"
 
 
+# ── name templates ───────────────────────────────────────────────────────────
+def test_a_template_reads_a_name_the_presets_do_not_fit():
+    """Label before the score, a T in the stamp, a literal REC in the middle."""
+    parser = SegmentParser(
+        "[site]_YYYYMMDDTHHMMSS_REC_[start_time]_[end_time]_[label]_[score]",
+        label_from="filename",
+    )
+    info = parser.parse(
+        f"{ROOT}/BOAALB/PONTO_A_20240115/PONTO_A_20240115T053000_REC_12.0_17.0_BOAALB_0.873.wav",
+        ROOT,
+    )
+    assert info.label == "BOAALB" and info.label_in_filename
+    assert info.site == "PONTO A"
+    assert info.recorded_at == datetime(2024, 1, 15, 5, 30)
+    assert (info.det_start, info.det_end) == (12.0, 17.0)
+    assert info.score == 0.873
+
+
+def test_a_site_keeps_its_own_underscores_in_a_template():
+    info = SegmentParser("[site]_YYYYMMDD_HHMMSS_[extra]").parse(
+        f"{ROOT}/x/MATA_DO_MEIO_20240115_053000_det1.wav", ROOT
+    )
+    assert info.site == "MATA DO MEIO"
+    assert info.extra == "det1"
+
+
+def test_a_star_matches_anything_without_capturing_it():
+    info = SegmentParser("[site]_YYYYMMDD_HHMMSS_*_[score]").parse(
+        f"{ROOT}/x/POCA_20240116_190000_whatever_here_0.655.wav", ROOT
+    )
+    assert info.site == "POCA" and info.score == 0.655
+
+
+def test_a_datetime_placeholder_takes_the_stamp_in_one_piece():
+    info = SegmentParser(
+        "[site]_[datetime]_[start]_[end]", datetime_format="%Y%m%dT%H%M%S"
+    ).parse(f"{ROOT}/x/POCA_20240116T190000_1.0_2.0.wav", ROOT)
+    assert info.recorded_at == datetime(2024, 1, 16, 19, 0)
+
+
+def test_a_template_must_match_the_whole_name():
+    """Half-matching would fill the GUI with facts read off the wrong tokens."""
+    info = SegmentParser("[site]_YYYYMMDD_HHMMSS").parse(
+        f"{ROOT}/x/POCA_20240116_190000_and_more.wav", ROOT
+    )
+    assert info.site is None and info.recorded_at is None
+
+
+def test_a_template_rewrites_the_label_it_captured():
+    parser = SegmentParser("[site]_YYYYMMDD_HHMMSS_[label]_[score]", label_from="filename")
+    assert parser.replace_label("POCA_20240116_190000_BOAALB_0.655.wav", ["TURDRU"]) == (
+        "POCA_20240116_190000_TURDRU_0.655.wav"
+    )
+
+
+def test_an_unknown_placeholder_is_rejected():
+    with pytest.raises(ValueError, match="unknown placeholder"):
+        SegmentParser("[site]_[speceis]")
+
+
+def test_a_placeholder_used_twice_is_rejected():
+    with pytest.raises(ValueError, match="more than once"):
+        SegmentParser("[site]_[site]")
+
+
+def test_a_hand_written_expression_is_never_read_as_a_template():
+    parser = SegmentParser(r"^(?P<label>[a-z]+)\[site\]$")
+    assert parser.pattern_name == "custom"
+    assert parser.parse(f"{ROOT}/x/rain[site].wav", ROOT).label == "x"
+
+
 # ── custom patterns ──────────────────────────────────────────────────────────
 def test_a_custom_pattern_with_named_groups():
     parser = SegmentParser(

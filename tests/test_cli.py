@@ -93,6 +93,24 @@ def test_pattern_presets_say_whether_they_carry_a_label():
     assert _pattern_has_label("vector-search") is True
     assert _pattern_has_label(r"^(?P<label>\w+)_(?P<site>\w+)$") is True
     assert _pattern_has_label(r"^(?P<site>\w+)$") is False
+    # A template says the same thing, without an expression being written out.
+    assert _pattern_has_label("[site]_YYYYMMDD_HHMMSS_[label]_[score]") is True
+    assert _pattern_has_label("[site]_YYYYMMDD_HHMMSS_[extra]") is False
+
+
+def test_a_template_with_a_bad_placeholder_is_refused(tmp_path):
+    result = runner.invoke(cli, [str(tmp_path), "--filename-pattern", "[site]_[speceis]"])
+    assert result.exit_code != 0
+    assert "speceis" in plain(result.output)
+
+
+def test_a_template_gets_past_validation(tmp_path):
+    result = runner.invoke(
+        cli,
+        [str(tmp_path / "nope"), "--filename-pattern",
+         "[site]_YYYYMMDDTHHMMSS_REC_[start_time]_[end_time]_[label]_[score]"],
+    )
+    assert result.exit_code == 2      # the missing folder, not the pattern
 
 
 def test_every_spectrogram_type_is_accepted(tmp_path):

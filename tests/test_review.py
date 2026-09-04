@@ -1,6 +1,6 @@
 import csv
 
-from conftest import goto_name, make_session, write_wav
+from conftest import TEMPLATE, goto_name, make_session, write_wav
 
 FIRST = "PONTO_A/BOAALB/PONTO_A_20240115_053000_12.0_17.0_det1.wav"
 
@@ -47,6 +47,45 @@ def test_site_subfolders_are_not_offered_as_labels(label_on_top_dir):
 
 def test_without_the_depth_those_subfolders_would_be_taken_for_labels(label_on_top_dir):
     assert make_session(label_on_top_dir).label_choices() == ["PHYLUT", "POCA", "PONTO A"]
+
+
+# ── a name shape no preset fits ──────────────────────────────────────────────
+def test_a_template_fills_in_every_fact_the_gui_shows(templated_dir):
+    """Without it the name half-matches and the GUI shows facts read off the
+    wrong tokens; with it every field is the one it says it is."""
+    session = make_session(templated_dir, filename_pattern=TEMPLATE, label_from="filename")
+    goto_name(session, "BOAALB")
+    view = session.view()
+    assert view.label == "BOAALB"
+    assert view.site == "PONTO A"
+    assert view.recorded_at == "2024-01-15 05:30:00"
+    assert (view.det_start, view.det_end) == (12.0, 17.0)
+    assert view.score == 0.873
+    assert view.extra is None
+
+
+def test_a_verdict_on_a_templated_name_rewrites_the_label_in_it(templated_dir):
+    session = make_session(templated_dir, filename_pattern=TEMPLATE, label_from="filename")
+    goto_name(session, "BOAALB")
+    session.apply_verdict("false", ["TURDRU"])
+    assert (templated_dir / "false" / "TURDRU"
+            / "PONTO_A_20240115T053000_REC_12.0_17.0_TURDRU_0.873.wav").exists()
+
+
+def test_the_same_layout_read_by_its_folders_instead(templated_dir):
+    """--label-from folder with --label-depth 1 keeps the site folder instead,
+    for a collection whose folders are the record rather than its file names."""
+    session = make_session(
+        templated_dir, filename_pattern=TEMPLATE, label_from="folder", label_depth=1
+    )
+    assert session.label_choices() == ["BOAALB", "PHYLUT"]
+    goto_name(session, "BOAALB")
+    assert session.view().site == "PONTO A"      # still read from the name
+    session.apply_verdict("true")
+    moved = templated_dir / "true" / "BOAALB" / "PONTO_A_20240115"
+    assert [p.name for p in moved.glob("*.wav")] == [
+        "PONTO_A_20240115T053000_REC_12.0_17.0_BOAALB_0.873.wav"
+    ]
 
 
 # ── where a verdict files a clip ─────────────────────────────────────────────

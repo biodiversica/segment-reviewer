@@ -62,6 +62,9 @@ segments/                       # --label-depth 1
 - Every part after the site is optional, and **a name that matches nothing at all
   is still perfectly reviewable** — the GUI just shows less about it.
 
+Named some other way? Write the shape out with `--filename-pattern` — see
+[Reading other naming conventions](#reading-other-naming-conventions).
+
 ---
 
 ## Install
@@ -215,10 +218,43 @@ so reviews spread over several sessions add up.
 
 ## Reading other naming conventions
 
-`--filename-pattern` takes a preset or **any regular expression with named
-groups**. Recognised groups: `site`, `date`, `time`, `datetime`, `start`, `end`,
-`label`, `score`, `extra` — all optional, matched against the file name without
-its extension.
+Names that do not match are still perfectly reviewable — the GUI just shows less
+about them, and shows nothing it is unsure of. To get the site, the time, the
+window and the score back, tell `--filename-pattern` how the name is built.
+
+### Writing a template
+
+The easy form: **write the name out, with its parts named in brackets.**
+Everything outside the brackets is matched literally.
+
+```bash
+# PONTO_A_20240115T053000_REC_12.0_17.0_BOAALB_0.873.wav
+segment-reviewer ~/segments \
+    --filename-pattern '[site]_YYYYMMDDTHHMMSS_REC_[start_time]_[end_time]_[label]_[score]'
+```
+
+| In a template | Matches |
+|---|---|
+| `[site]`, `[label]` | free text — may contain underscores |
+| `YYYYMMDD`, `HHMMSS` | the date and the time, written bare or as `[date]`/`[time]` |
+| `[datetime]` | both at once, in whatever shape — pair it with `--datetime-format` |
+| `[start_time]`, `[end_time]` | the clip's window in the recording, in seconds |
+| `[score]` | a similarity or confidence number |
+| `[extra]` | anything left, shown in the GUI as *extra* |
+| `*` | anything, not captured |
+| anything else | itself, literally |
+
+Every placeholder is optional, but the template must match the **whole** name —
+a half-match would fill the GUI with facts read off the wrong tokens, so it is
+treated as no match at all. A typo like `[speceis]` is refused at startup rather
+than silently ignored.
+
+### Writing an expression
+
+For shapes no template describes, `--filename-pattern` still takes **any regular
+expression with named groups** — `site`, `date`, `time`, `datetime`, `start`,
+`end`, `label`, `score`, `extra`, all optional, matched against the name without
+its extension:
 
 ```bash
 # label first, then site, then a 12-digit timestamp: BOAALB-siteA-202401150530.wav
@@ -227,9 +263,23 @@ segment-reviewer ~/segments \
     --datetime-format '%Y%m%d%H%M'
 ```
 
-`--label-from` chooses where the label comes from: `folder` (the default),
-`filename` (the pattern's `label` group), or `none`. A pattern that captures a
-`label` group switches to `filename` on its own unless you say otherwise.
+### Where the label comes from
+
+`--label-from` chooses: `folder` (the default), `filename` (the pattern's `label`
+group), or `none`. A pattern that captures a `label` group switches to `filename`
+on its own unless you say otherwise — and in that mode the clip is filed flat and
+its **name rewritten** to carry the label you confirmed.
+
+To keep the folders instead, say so. With segments filed as
+`[label]/[site]_YYYYMMDD/clip.wav`, this reads the label off the top folder,
+keeps the site folder under it, and still takes the site, times and score from
+the name:
+
+```bash
+segment-reviewer ~/segments \
+    --filename-pattern '[site]_YYYYMMDDTHHMMSS_REC_[start_time]_[end_time]_[label]_[score]' \
+    --label-from folder --label-depth 1
+```
 
 ### The vector-search preset
 
@@ -318,9 +368,10 @@ segment-reviewer SEGMENTS [OPTIONS]
       --label-depth INTEGER     Which folder carries the label, counting down from
                                 SEGMENTS: 1 for LABEL/SITE/clip.wav. 0 is the folder
                                 the clip sits in  [default: 0]
-      --filename-pattern TEXT   'default', 'vector-search', or a regex with the named
-                                groups site, date, time, datetime, start, end, label,
-                                score, extra  [default: default]
+      --filename-pattern TEXT   'default', 'vector-search', a template such as
+                                '[site]_YYYYMMDD_HHMMSS_[label]_[score]', or a regex
+                                with the named groups site, date, time, datetime,
+                                start, end, label, score, extra  [default: default]
       --datetime-format TEXT    strptime format for the captured date and time
                                 [default: %Y%m%d%H%M%S]
       --no-multi-label          Restrict each segment to one label (multi-label is on

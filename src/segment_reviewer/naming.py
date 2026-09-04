@@ -14,9 +14,17 @@ Two independent sources:
   the clip is still reviewable, just with less shown about it.
 
 Both are configurable: ``--label-from`` chooses the label source, ``--label-depth``
-which folder carries it, and ``--filename-pattern`` the regular expression, so a
-collection named by any other convention can be read by giving a pattern with the
-named groups it uses.
+which folder carries it, and ``--filename-pattern`` how the name is read, so a
+collection named by any other convention can still be read in full.
+
+A name shape is easiest written as a **template** — the name with its parts named
+in brackets, everything else matched literally::
+
+    [site]_YYYYMMDDTHHMMSS_REC_[start]_[end]_[label]_[score]
+
+``--filename-pattern`` also still takes a preset name (``default``,
+``vector-search``) or a regular expression with the named groups spelled out, for
+shapes no template can describe.
 """
 
 from __future__ import annotations
@@ -55,6 +63,113 @@ PRESETS: dict[str, tuple[str, ...]] = {
     "default": (DEFAULT_PATTERN,),
     "vector-search": VECTOR_SEARCH_PATTERNS,
 }
+
+#: A number, with or without decimals: a detection window bound or a score.
+NUMBER = r"\d+(?:\.\d+)?"
+
+#: A date and a time run together, with or without separators between the parts:
+#: ``20240115T053000``, ``20240115_053000``, ``20240115053000``.
+DATETIME = r"\d{4}\D?\d{2}\D?\d{2}\D?\d{2}\D?\d{2}\D?\d{2}"
+
+#: What each template placeholder matches. Free text is lazy so it stops at the
+#: literal that follows it, which is what lets a site keep its own underscores.
+TEMPLATE_FIELDS: dict[str, str] = {
+    "site": r".+?",
+    "label": r".+?",
+    "date": r"\d{8}",
+    "time": r"\d{6}",
+    "datetime": DATETIME,
+    "start": NUMBER,
+    "end": NUMBER,
+    "score": NUMBER,
+    "extra": r".*?",
+}
+
+#: Other spellings a placeholder may be written with, lower-cased. ``YYYYMMDD``
+#: and ``HHMMSS`` may also be written bare, without the brackets, so a name shape
+#: can be typed out much as it reads.
+TEMPLATE_ALIASES: dict[str, str] = {
+    "start_time": "start",
+    "end_time": "end",
+    "yyyymmdd": "date",
+    "hhmmss": "time",
+    "timestamp": "datetime",
+}
+
+#: One ``[placeholder]``, one bare date/time token, or a ``*`` standing for
+#: anything that is not worth capturing. The bare tokens are matched without word
+#: boundaries so ``YYYYMMDDTHHMMSS`` reads as a date, a literal ``T`` and a time.
+TEMPLATE_TOKEN = re.compile(r"\[([A-Za-z_]+)\]|(YYYYMMDD|HHMMSS)|(\*)")
+
+
+def _field(name: str | None) -> str | None:
+    """The group a placeholder spelling stands for, or None if it names none."""
+    if not name:
+        return None
+    key = name.strip().lower()
+    key = TEMPLATE_ALIASES.get(key, key)
+    return key if key in TEMPLATE_FIELDS else None
+
+
+def is_template(pattern: str) -> bool:
+    """True when *pattern* is a placeholder template rather than a regular expression.
+
+    A hand-written expression has to use ``(?P<name>...)`` to capture anything,
+    so its presence settles it; otherwise a single known placeholder is enough.
+    """
+    if "(?P<" in pattern:
+        return False
+    return any(
+        _field(m.group(1) or m.group(2)) for m in TEMPLATE_TOKEN.finditer(pattern)
+    )
+
+
+def compile_template(template: str) -> str:
+    """A ``[site]_YYYYMMDD_HHMMSS_[start]_[end]`` template as a regular expression.
+
+    Placeholders become named groups, ``*`` matches anything, and everything
+    between them is matched literally — so a name shape can be written the way it
+    reads instead of as an expression. The whole stem must match, which is what
+    makes a wrong template fail loudly rather than half-fill the GUI.
+    """
+    parts, used, cut = ["^"], [], 0
+    for match in TEMPLATE_TOKEN.finditer(template):
+        parts.append(re.escape(template[cut:match.start()]))
+        cut = match.end()
+        if match.group(3):
+            parts.append(r".*?")
+            continue
+        spelling = match.group(1) or match.group(2)
+        field = _field(spelling)
+        if field is None:
+            raise ValueError(
+                f"unknown placeholder [{spelling}]; use one of "
+                f"{', '.join(TEMPLATE_FIELDS)}"
+            )
+        if field in used:
+            raise ValueError(f"[{spelling}] appears more than once")
+        used.append(field)
+        parts.append(f"(?P<{field}>{TEMPLATE_FIELDS[field]})")
+    parts.append(re.escape(template[cut:]))
+    parts.append("$")
+    if not used:
+        raise ValueError("a template needs at least one placeholder")
+    return "".join(parts)
+
+
+def expressions(pattern: str | tuple[str, ...]) -> tuple[str, ...]:
+    """The regular expression(s) a ``--filename-pattern`` value stands for.
+
+    Three forms, tried in this order: the name of a preset, a placeholder
+    template, or an expression written out by hand.
+    """
+    if not isinstance(pattern, str):
+        return tuple(pattern)
+    if pattern in PRESETS:
+        return PRESETS[pattern]
+    if is_template(pattern):
+        return (compile_template(pattern),)
+    return (pattern,)
 
 #: Where a segment's label is read from.
 LABEL_SOURCES = ("folder", "filename", "none")
@@ -101,11 +216,13 @@ class SegmentParser:
         self.label_from = label_from
         self.label_depth = label_depth
         self.datetime_format = datetime_format
-        self.pattern_name = pattern if isinstance(pattern, str) and pattern in PRESETS else "custom"
-        raw = PRESETS.get(pattern, pattern) if isinstance(pattern, str) else pattern
-        if isinstance(raw, str):
-            raw = (raw,)
-        self.patterns = tuple(raw)
+        if isinstance(pattern, str) and pattern in PRESETS:
+            self.pattern_name = pattern
+        elif isinstance(pattern, str) and is_template(pattern):
+            self.pattern_name = "template"
+        else:
+            self.pattern_name = "custom"
+        self.patterns = expressions(pattern)
         self.regexes = tuple(re.compile(p) for p in self.patterns)
 
     # ── reading ──────────────────────────────────────────────────────────────

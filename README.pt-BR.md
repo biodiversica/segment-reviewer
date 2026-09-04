@@ -62,6 +62,9 @@ segmentos/                       # --label-depth 1
 - Tudo depois do ponto é opcional, e **um nome que não casa com nada continua
   perfeitamente revisável** — a interface apenas mostra menos sobre ele.
 
+Nomeado de outro jeito? Escreva o formato com `--filename-pattern` — veja
+[Outras convenções de nome](#outras-convenções-de-nome).
+
 ---
 
 ## Instalação
@@ -211,10 +214,44 @@ complementada, então revisões em várias sessões se somam.
 
 ## Outras convenções de nome
 
-`--filename-pattern` aceita uma predefinição ou **qualquer expressão regular com
-grupos nomeados**. Grupos reconhecidos: `site`, `date`, `time`, `datetime`,
-`start`, `end`, `label`, `score`, `extra` — todos opcionais, aplicados ao nome do
-arquivo sem a extensão.
+Nomes que não casam continuam perfeitamente revisáveis — a interface só mostra
+menos sobre eles, e não mostra nada de que não tenha certeza. Para recuperar o
+ponto, o horário, a janela e o escore, diga ao `--filename-pattern` como o nome é
+construído.
+
+### Escrevendo um modelo
+
+A forma fácil: **escreva o nome, com as partes nomeadas entre colchetes.** Tudo
+fora dos colchetes é comparado literalmente.
+
+```bash
+# PONTO_A_20240115T053000_REC_12.0_17.0_BOAALB_0.873.wav
+segment-reviewer ~/segmentos \
+    --filename-pattern '[site]_YYYYMMDDTHHMMSS_REC_[start_time]_[end_time]_[label]_[score]'
+```
+
+| No modelo | Corresponde a |
+|---|---|
+| `[site]`, `[label]` | texto livre — pode conter underscores |
+| `YYYYMMDD`, `HHMMSS` | a data e a hora, escritas soltas ou como `[date]`/`[time]` |
+| `[datetime]` | as duas de uma vez, em qualquer formato — use com `--datetime-format` |
+| `[start_time]`, `[end_time]` | a janela do clipe na gravação, em segundos |
+| `[score]` | um número de similaridade ou confiança |
+| `[extra]` | o que sobrar, mostrado na interface como *extra* |
+| `*` | qualquer coisa, sem capturar |
+| qualquer outra coisa | ela mesma, literalmente |
+
+Todo campo é opcional, mas o modelo precisa casar com o nome **inteiro** — casar
+pela metade encheria a interface com dados lidos dos pedaços errados, então isso
+conta como não casar. Um erro de digitação como `[speceis]` é recusado na
+inicialização, em vez de ignorado em silêncio.
+
+### Escrevendo uma expressão
+
+Para formatos que nenhum modelo descreve, `--filename-pattern` continua aceitando
+**qualquer expressão regular com grupos nomeados** — `site`, `date`, `time`,
+`datetime`, `start`, `end`, `label`, `score`, `extra`, todos opcionais, aplicados
+ao nome do arquivo sem a extensão:
 
 ```bash
 # rótulo primeiro, depois o ponto, depois um timestamp de 12 dígitos:
@@ -224,9 +261,23 @@ segment-reviewer ~/segmentos \
     --datetime-format '%Y%m%d%H%M'
 ```
 
-`--label-from` escolhe de onde vem o rótulo: `folder` (o padrão), `filename` (o
-grupo `label` do padrão) ou `none`. Um padrão que captura um grupo `label` muda
-sozinho para `filename`, a menos que você diga o contrário.
+### De onde vem o rótulo
+
+`--label-from` escolhe: `folder` (o padrão), `filename` (o grupo `label` do
+padrão) ou `none`. Um padrão que captura um grupo `label` muda sozinho para
+`filename`, a menos que você diga o contrário — e nesse modo o clipe é arquivado
+direto, com o **nome reescrito** para carregar o rótulo confirmado.
+
+Para manter as pastas, diga isso. Com segmentos organizados como
+`[rótulo]/[ponto]_AAAAMMDD/clipe.wav`, o comando abaixo lê o rótulo da pasta de
+cima, mantém a pasta do ponto embaixo dele, e ainda tira ponto, horários e escore
+do nome do arquivo:
+
+```bash
+segment-reviewer ~/segmentos \
+    --filename-pattern '[site]_YYYYMMDDTHHMMSS_REC_[start_time]_[end_time]_[label]_[score]' \
+    --label-from folder --label-depth 1
+```
 
 ### A predefinição vector-search
 
@@ -316,9 +367,10 @@ segment-reviewer SEGMENTOS [OPÇÕES]
       --label-depth INTEGER     Qual pasta carrega o rótulo, contando a partir de
                                 SEGMENTOS: 1 para RÓTULO/PONTO/clipe.wav. 0 é a pasta
                                 em que o clipe está  [padrão: 0]
-      --filename-pattern TEXT   'default', 'vector-search', ou uma regex com os grupos
-                                nomeados site, date, time, datetime, start, end, label,
-                                score, extra  [padrão: default]
+      --filename-pattern TEXT   'default', 'vector-search', um modelo como
+                                '[site]_YYYYMMDD_HHMMSS_[label]_[score]', ou uma regex
+                                com os grupos nomeados site, date, time, datetime,
+                                start, end, label, score, extra  [padrão: default]
       --datetime-format TEXT    Formato strptime da data e hora capturadas
                                 [padrão: %Y%m%d%H%M%S]
       --no-multi-label          Limita cada segmento a um rótulo (vários rótulos é o
