@@ -51,6 +51,7 @@ class ReviewSession:
             pattern=config.filename_pattern,
             label_from=config.label_from,
             datetime_format=config.datetime_format,
+            label_depth=config.label_depth,
         )
         self._lock = threading.RLock()
         self._ensure_dirs()
@@ -179,8 +180,10 @@ class ReviewSession:
     def discovered_labels(self) -> list[str]:
         """Every label the pending clips already carry, in alphabetical order.
 
-        The folder names in folder mode, the labels in the file names in filename
-        mode. Used to seed the label list the first time a collection is opened.
+        The label folder in folder mode — the one ``--label-depth`` points at, so
+        the sites kept under a class folder are not mistaken for classes — and
+        the labels in the file names in filename mode. Used to seed the label
+        list the first time a collection is opened.
         """
         with self._lock:
             pending = list(self.segments)
@@ -206,7 +209,9 @@ class ReviewSession:
           with its label folder swapped for the one the reviewer confirmed:
           ``PONTO_A/BOAALB/x.wav`` accepted stays ``true/PONTO_A/BOAALB/x.wav``,
           and corrected to TURDRU becomes ``false/PONTO_A/TURDRU/x.wav``. Nothing
-          about the clip's place in the collection is lost by reviewing it.
+          about the clip's place in the collection is lost by reviewing it —
+          under ``--label-depth`` that includes the folders *below* the label,
+          so ``BOAALB/PONTO_A/x.wav`` becomes ``false/TURDRU/PONTO_A/x.wav``.
         * **Label in the file name** — the name already carries the verdict's
           label, so the clip is filed flat under the verdict folder, with one
           subfolder per label for rejections.
@@ -225,6 +230,7 @@ class ReviewSession:
         label_folder = "_".join(slug(x) for x in final if str(x).strip())
         if label_folder:
             parts.append(label_folder)
+        parts.extend(info.suffix)
         return self.backend.join(verdict_root, *parts) if parts else verdict_root
 
     def apply_verdict(self, verdict: str, labels: list[str] | None = None) -> dict:

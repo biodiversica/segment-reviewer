@@ -39,6 +39,16 @@ def test_configured_labels_are_the_only_ones_offered(segments_dir):
     assert session.label_choices() == ["rain", "BOAALB"]
 
 
+def test_site_subfolders_are_not_offered_as_labels(label_on_top_dir):
+    """BOAALB/PONTO_A/clip.wav — the sites inside a class folder are not classes."""
+    session = make_session(label_on_top_dir, label_depth=1)
+    assert session.label_choices() == ["BOAALB", "PHYLUT"]
+
+
+def test_without_the_depth_those_subfolders_would_be_taken_for_labels(label_on_top_dir):
+    assert make_session(label_on_top_dir).label_choices() == ["PHYLUT", "POCA", "PONTO A"]
+
+
 # ── where a verdict files a clip ─────────────────────────────────────────────
 def test_true_keeps_the_clip_where_it_was_under_true(session, segments_dir):
     goto_name(session, FIRST)
@@ -62,6 +72,17 @@ def test_several_labels_go_to_multi_under_a_joined_folder(segments_dir):
     goto_name(session, FIRST)
     session.apply_verdict("true", ["BOAALB", "PHYLUT"])
     moved = segments_dir / "multi" / "PONTO_A" / "BOAALB_PHYLUT"
+    assert [p.name for p in moved.glob("*.wav")] == [
+        "PONTO_A_20240115_053000_12.0_17.0_det1.wav"
+    ]
+
+
+def test_a_site_folder_under_the_label_is_kept_under_the_new_label(label_on_top_dir):
+    session = make_session(label_on_top_dir, label_depth=1)
+    goto_name(session, "det1")
+    assert session.view().label == "BOAALB"
+    session.apply_verdict("false", ["TURDRU"])
+    moved = label_on_top_dir / "false" / "TURDRU" / "PONTO_A"
     assert [p.name for p in moved.glob("*.wav")] == [
         "PONTO_A_20240115_053000_12.0_17.0_det1.wav"
     ]

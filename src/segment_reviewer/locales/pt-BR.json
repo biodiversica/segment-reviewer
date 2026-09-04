@@ -101,6 +101,7 @@
     "token_hint": "É preciso token de acesso — abra a URL acima, ela já leva o token.",
     "stop_hint": "Pressione Ctrl+C para parar.",
     "label_from": "Origem do rótulo",
+    "label_depth": "Nível da pasta do rótulo",
     "pattern": "Padrão do nome",
     "labels_file": "Arquivo da lista"
   }

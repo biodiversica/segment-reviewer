@@ -101,6 +101,7 @@
     "token_hint": "Access token required — open the URL above, it already carries the token.",
     "stop_hint": "Press Ctrl+C to stop.",
     "label_from": "Label source",
+    "label_depth": "Label folder depth",
     "pattern": "Filename pattern",
     "labels_file": "Label list file"
   }

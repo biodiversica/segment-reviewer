@@ -34,6 +34,13 @@ DEFAULT_LAYOUT = [
     ("POCA/BOAALB", "POCA_20240116_190000_40.0_45.0_det3.wav"),
 ]
 
+#: The class folder on top, with a site folder inside it — read with label_depth=1.
+LABEL_ON_TOP_LAYOUT = [
+    ("BOAALB/PONTO_A", "PONTO_A_20240115_053000_12.0_17.0_det1.wav"),
+    ("BOAALB/POCA", "POCA_20240116_190000_40.0_45.0_det3.wav"),
+    ("PHYLUT", "PONTO_A_20240115_061500_3.5_8.5_det2.wav"),
+]
+
 #: What the bioacoustic vector-search notebooks write: label and score in the name.
 VECTOR_SEARCH_LAYOUT = [
     ("PONTO_A/BOAALB", "PONTO_A_20240115_053000_12.0-17.0s_0.873_BOAALB.wav"),
@@ -57,6 +64,11 @@ def build_folder(root: Path, layout, manifest_for=(0,)) -> Path:
 @pytest.fixture
 def segments_dir(tmp_path):
     return build_folder(tmp_path / "segments", DEFAULT_LAYOUT)
+
+
+@pytest.fixture
+def label_on_top_dir(tmp_path):
+    return build_folder(tmp_path / "on_top", LABEL_ON_TOP_LAYOUT)
 
 
 @pytest.fixture

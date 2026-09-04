@@ -5,14 +5,18 @@ Two independent sources:
 * **The folder** the clip sits in gives its **label**. A reviewed collection is
   normally organised one folder per class — ``.../PONTO_A/BOAALB/clip.wav`` — so
   the folder immediately above the file is the label the clip currently carries.
+  Collections that keep the class folder on top instead, with sites inside it —
+  ``BOAALB/PONTO_A/clip.wav`` — say so with ``--label-depth``, counting folders
+  down from the segments root.
 * **The file name** gives the recording site, when it was recorded, and the
   position of the clip inside that recording. The default pattern is
   ``[site]_[YYYYMMDD]_[HHMMSS]_[start]_[end]_*``; anything else is left alone and
   the clip is still reviewable, just with less shown about it.
 
-Both are configurable: ``--label-from`` chooses the label source and
-``--filename-pattern`` the regular expression, so a collection named by any other
-convention can be read by giving a pattern with the named groups it uses.
+Both are configurable: ``--label-from`` chooses the label source, ``--label-depth``
+which folder carries it, and ``--filename-pattern`` the regular expression, so a
+collection named by any other convention can be read by giving a pattern with the
+named groups it uses.
 """
 
 from __future__ import annotations
@@ -69,9 +73,13 @@ class SegmentName:
     det_end: float | None = None
     score: float | None = None
     extra: str | None = None
-    #: Folders between the segments root and the clip, outermost first. In
-    #: folder mode the last one is the label and is not repeated here.
+    #: Folders between the segments root and the label folder, outermost first.
+    #: The label folder itself is not repeated here.
     prefix: tuple[str, ...] = field(default_factory=tuple)
+    #: Folders between the label folder and the clip — the sites, or whatever
+    #: else a collection keeps under its class folders. Empty in the usual
+    #: layout, where the label is the folder the clip sits in.
+    suffix: tuple[str, ...] = field(default_factory=tuple)
     #: True when the label was captured from the file name rather than a folder.
     label_in_filename: bool = False
 
@@ -84,10 +92,14 @@ class SegmentParser:
         pattern: str | tuple[str, ...] = "default",
         label_from: str = "folder",
         datetime_format: str = DEFAULT_DATETIME_FORMAT,
+        label_depth: int = 0,
     ) -> None:
         if label_from not in LABEL_SOURCES:
             raise ValueError(f"label_from must be one of {LABEL_SOURCES}, not {label_from!r}")
+        if label_depth < 0:
+            raise ValueError(f"label_depth must be 0 or more, not {label_depth!r}")
         self.label_from = label_from
+        self.label_depth = label_depth
         self.datetime_format = datetime_format
         self.pattern_name = pattern if isinstance(pattern, str) and pattern in PRESETS else "custom"
         raw = PRESETS.get(pattern, pattern) if isinstance(pattern, str) else pattern
@@ -104,7 +116,7 @@ class SegmentParser:
         folders = self._folders(posix, root)
         found = self._match_groups(stem)
 
-        label, in_filename, prefix = self._resolve_label(found.get("label"), folders)
+        label, in_filename, prefix, suffix = self._resolve_label(found.get("label"), folders)
         return SegmentName(
             label=label,
             site=self._clean(found.get("site")),
@@ -114,6 +126,7 @@ class SegmentParser:
             score=self._to_float(found.get("score")),
             extra=found.get("extra") or None,
             prefix=prefix,
+            suffix=suffix,
             label_in_filename=in_filename,
         )
 
@@ -143,13 +156,28 @@ class SegmentParser:
 
     def _resolve_label(
         self, from_name: str | None, folders: tuple[str, ...]
-    ) -> tuple[str, bool, tuple[str, ...]]:
-        """Label, whether it came from the file name, and the folders above it."""
+    ) -> tuple[str, bool, tuple[str, ...], tuple[str, ...]]:
+        """Label, whether it came from the file name, and the folders around it."""
         if self.label_from == "filename":
-            return (self._clean(from_name) or ""), bool(from_name), folders
+            return (self._clean(from_name) or ""), bool(from_name), folders, ()
         if self.label_from == "folder" and folders:
-            return self._clean(folders[-1]) or "", False, folders[:-1]
-        return "", False, folders
+            at = self._label_index(len(folders))
+            return self._clean(folders[at]) or "", False, folders[:at], folders[at + 1:]
+        return "", False, folders, ()
+
+    def _label_index(self, count: int) -> int:
+        """Which of the *count* folders above a clip carries its label.
+
+        Depth 0 — the default — is the folder the clip sits in, the usual one
+        folder per class at the bottom of the tree. Depth 1 is the first folder
+        under the segments root, 2 the one below that, and so on, for collections
+        that put the class folder on top and sites inside it. A clip that sits
+        shallower than the depth asked for is labelled by its innermost folder,
+        so a mixed tree still labels every clip.
+        """
+        if self.label_depth <= 0:
+            return count - 1
+        return min(self.label_depth - 1, count - 1)
 
     def _to_datetime(self, found: dict[str, str]) -> datetime | None:
         stamp = found.get("datetime") or f"{found.get('date', '')}{found.get('time', '')}"

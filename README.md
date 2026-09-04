@@ -35,6 +35,19 @@ Any folders above the label are kept as they are — `2024/campo/PONTO_A/BOAALB/
 labels the clip `BOAALB` and remembers the three folders above it. A clip sitting
 directly in the segments folder simply has no label yet.
 
+**Class folder on top?** Some collections are filed the other way round, with the
+sites *inside* each class folder. Say which level carries the label with
+`--label-depth`, counting down from the segments folder, and the sites below it
+stay sites — they are not offered as labels, and a verdict puts them back under
+the label you confirmed:
+
+```
+segments/                       # --label-depth 1
+├── BOAALB/PONTO_A/clip.wav     → label BOAALB, site folder PONTO_A kept
+├── BOAALB/POCA/clip.wav        → label BOAALB
+└── PHYLUT/clip.wav             → label PHYLUT (shallower than the depth, still labelled)
+```
+
 **The file name gives the rest.** By default it is read as
 
 ```
@@ -169,6 +182,9 @@ PONTO_A/BOAALB/clip.wav
 
 - File names are **left exactly as they were found** — the label lives in the
   folder, so there is nothing in the name to correct.
+- Under `--label-depth`, the folders *below* the label are kept too, back in
+  their place: `BOAALB/PONTO_A/clip.wav` corrected to TURDRU becomes
+  `false/TURDRU/PONTO_A/clip.wav`.
 - A segment given **more than one label** goes to `multi/` rather than `true/` or
   `false/`, under a folder naming every label.
 - A clip with no label folder is filed straight under `true/`, or under
@@ -299,6 +315,9 @@ segment-reviewer SEGMENTS [OPTIONS]
       --no-labels-file          Do not read or write it; edits last for this session
       --label-from TEXT         Where a segment's label is read from: folder, filename
                                 or none  [default: folder]
+      --label-depth INTEGER     Which folder carries the label, counting down from
+                                SEGMENTS: 1 for LABEL/SITE/clip.wav. 0 is the folder
+                                the clip sits in  [default: 0]
       --filename-pattern TEXT   'default', 'vector-search', or a regex with the named
                                 groups site, date, time, datetime, start, end, label,
                                 score, extra  [default: default]

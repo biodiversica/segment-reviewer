@@ -35,6 +35,19 @@ As pastas acima do rótulo são mantidas como estão — `2024/campo/PONTO_A/BOA
 rotula o clipe como `BOAALB` e lembra das três pastas acima dele. Um clipe
 diretamente na pasta de segmentos simplesmente ainda não tem rótulo.
 
+**A pasta da classe vem primeiro?** Alguns conjuntos são organizados ao
+contrário, com os pontos *dentro* de cada pasta de classe. Diga qual nível carrega
+o rótulo com `--label-depth`, contando a partir da pasta de segmentos: os pontos
+abaixo dele continuam sendo pontos — não são oferecidos como rótulos, e o veredito
+os recoloca sob o rótulo que você confirmou:
+
+```
+segmentos/                       # --label-depth 1
+├── BOAALB/PONTO_A/clipe.wav     → rótulo BOAALB, a pasta PONTO_A é mantida
+├── BOAALB/POCA/clipe.wav        → rótulo BOAALB
+└── PHYLUT/clipe.wav             → rótulo PHYLUT (mais raso que o nível, ainda rotulado)
+```
+
 **O nome do arquivo fornece o resto das informações.** Por padrão um arquivo de áudio é lido como
 
 ```
@@ -165,6 +178,9 @@ PONTO_A/BOAALB/clipe.wav
 
 - Os nomes dos arquivos ficam **exatamente como foram encontrados** — o rótulo
   está na pasta, então não há nada a corrigir no nome.
+- Com `--label-depth`, as pastas *abaixo* do rótulo também são mantidas, no lugar
+  delas: `BOAALB/PONTO_A/clipe.wav` corrigido para TURDRU vira
+  `falso/TURDRU/PONTO_A/clipe.wav`.
 - Um segmento com **mais de um rótulo** vai para `multi/` em vez de
   `verdadeiro/` ou `falso/`, sob uma pasta que nomeia todos os rótulos.
 - Um clipe sem pasta de rótulo é arquivado direto em `verdadeiro/`, ou em
@@ -297,6 +313,9 @@ segment-reviewer SEGMENTOS [OPÇÕES]
       --no-labels-file          Não lê nem grava a lista; as edições valem só na sessão
       --label-from TEXT         De onde vem o rótulo: folder, filename ou none
                                 [padrão: folder]
+      --label-depth INTEGER     Qual pasta carrega o rótulo, contando a partir de
+                                SEGMENTOS: 1 para RÓTULO/PONTO/clipe.wav. 0 é a pasta
+                                em que o clipe está  [padrão: 0]
       --filename-pattern TEXT   'default', 'vector-search', ou uma regex com os grupos
                                 nomeados site, date, time, datetime, start, end, label,
                                 score, extra  [padrão: default]

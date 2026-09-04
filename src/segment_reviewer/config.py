@@ -44,6 +44,10 @@ class ReviewConfig:
 
     # How a segment's metadata is read
     label_from: str = "folder"
+    #: Which folder carries the label, counting down from the segments root.
+    #: 0 is the folder the clip sits in; 1 the first folder under the root, for
+    #: collections that keep the class on top and sites inside it.
+    label_depth: int = 0
     filename_pattern: str = "default"
     datetime_format: str = DEFAULT_DATETIME_FORMAT
 

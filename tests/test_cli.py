@@ -48,7 +48,8 @@ def test_the_documented_options_are_all_accepted():
     """Checked against the command, not its rendering, which rich reflows and
     truncates depending on the terminal it believes it is writing to."""
     names = declared_options()
-    for flag in ("--lang", "--labels", "--label-from", "--filename-pattern",
+    for flag in ("--lang", "--labels", "--label-from", "--label-depth",
+                 "--filename-pattern",
                  "--datetime-format", "--multi-label", "--no-multi-label",
                  "--labels-file", "--no-labels-file", "--annotations",
                  "--annotations-path", "--spec-type", "--fmin", "--fmax",

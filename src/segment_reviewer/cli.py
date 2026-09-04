@@ -91,6 +91,7 @@ def _summary(session: ReviewSession, config: ReviewConfig, t) -> str:
         (t("cli.already_false"), str(counts["false"])),
         (t("cli.already_multi"), str(counts["multi"])),
         (t("cli.label_from"), config.label_from),
+        *([(t("cli.label_depth"), str(config.label_depth))] if config.label_depth else []),
         (t("cli.pattern"), config.filename_pattern),
         (t("cli.labels"), ", ".join(session.label_choices()) or t("cli.labels_none")),
         (t("cli.labels_file"),
@@ -129,6 +130,12 @@ def review(
         None, "--label-from",
         help="Where a segment's label is read from: 'folder' (the folder it sits in), "
              "'filename' (captured by --filename-pattern) or 'none'.  [default: folder]",
+    ),
+    label_depth: int = typer.Option(
+        0, "--label-depth", min=0,
+        help="Which folder carries the label, counting down from the segments folder: "
+             "1 for LABEL/SITE/clip.wav, 2 for the level below that. The default 0 is "
+             "the folder the clip sits in, as in SITE/LABEL/clip.wav.",
     ),
     filename_pattern: str = typer.Option(
         "default", "--filename-pattern",
@@ -247,6 +254,7 @@ def review(
         labels_file="" if no_labels_file else (labels_file or DEFAULT_LABELS_FILE),
         persist_labels=not no_labels_file,
         label_from=label_from,
+        label_depth=label_depth,
         filename_pattern=filename_pattern,
         datetime_format=datetime_format,
         multi_label=multi_label,
