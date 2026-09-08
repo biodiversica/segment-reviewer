@@ -72,6 +72,11 @@ def test_a_full_review_over_ssh(remote):
     assert len(list((segments_dir / "false").rglob("TURDRU/*.wav"))) == 1
     assert len(list((segments_dir / "multi").rglob("*.wav"))) == 1
 
+    # The folders the clips came from empty out over SSH too; the root stays.
+    assert not (segments_dir / "PONTO_A").exists()
+    assert not (segments_dir / "POCA").exists()
+    assert (segments_dir / "segment_sources.csv").exists()
+
     rows = list(csv.DictReader((segments_dir / "annotations.csv").open()))
     assert len(rows) == 4        # the multi-label clip contributes two rows
     assert session.view() is None

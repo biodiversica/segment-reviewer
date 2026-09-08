@@ -224,13 +224,14 @@ class ReviewSession:
         it goes to the multi folder either way. Beyond that the layout follows
         where the label lives:
 
-        * **Label in a folder** (the default) — the clip keeps the path it had,
-          with its label folder swapped for the one the reviewer confirmed:
-          ``PONTO_A/BOAALB/x.wav`` accepted stays ``true/PONTO_A/BOAALB/x.wav``,
-          and corrected to TURDRU becomes ``false/PONTO_A/TURDRU/x.wav``. Nothing
-          about the clip's place in the collection is lost by reviewing it —
-          under ``--label-depth`` that includes the folders *below* the label,
-          so ``BOAALB/PONTO_A/x.wav`` becomes ``false/TURDRU/PONTO_A/x.wav``.
+        * **Label in a folder** (the default) — the clip keeps the folders that
+          stood *above* its label, with the label folder swapped for the one the
+          reviewer confirmed: ``PONTO_A/BOAALB/x.wav`` accepted stays
+          ``true/PONTO_A/BOAALB/x.wav``, and corrected to TURDRU becomes
+          ``false/PONTO_A/TURDRU/x.wav``. Whatever sat *below* the label is not
+          rebuilt: under ``--label-depth``, ``BOAALB/PONTO_A/20240115/x.wav``
+          becomes ``false/TURDRU/x.wav``, one folder per label holding the clips
+          themselves — the site and the day are already in the file name.
         * **Label in the file name** — the name already carries the verdict's
           label, so the clip is filed flat under the verdict folder, with one
           subfolder per label for rejections.
@@ -249,7 +250,6 @@ class ReviewSession:
         label_folder = "_".join(slug(x) for x in final if str(x).strip())
         if label_folder:
             parts.append(label_folder)
-        parts.extend(info.suffix)
         return self.backend.join(verdict_root, *parts) if parts else verdict_root
 
     def apply_verdict(self, verdict: str, labels: list[str] | None = None) -> dict:
@@ -286,6 +286,10 @@ class ReviewSession:
             except Exception:
                 self.segments.insert(self.index, src)  # put it back, nothing happened
                 raise
+            # The clip's own folder, and whatever else it was the last clip in,
+            # are no longer part of the collection: a reviewed folder empties out
+            # rather than leaving a shell of the tree behind.
+            self.backend.prune_empty(self.backend.dirname(src), self.backend.root)
 
             if self.annotations.enabled:
                 recording = self.annotations.recording_for(self.backend.basename(src))

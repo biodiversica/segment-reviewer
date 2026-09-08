@@ -59,6 +59,15 @@ class LocalBackend(Backend):
     def makedirs(self, path: str) -> None:
         os.makedirs(path, exist_ok=True)
 
+    def listdir(self, path: str) -> list[str]:
+        try:
+            return os.listdir(path)
+        except OSError:
+            return []
+
+    def rmdir(self, path: str) -> None:
+        os.rmdir(path)
+
     def move(self, src: str, dst: str) -> None:
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         shutil.move(src, dst)

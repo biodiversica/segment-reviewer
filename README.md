@@ -37,15 +37,16 @@ directly in the segments folder simply has no label yet.
 
 **Class folder on top?** Some collections are filed the other way round, with the
 sites *inside* each class folder. Say which level carries the label with
-`--label-depth`, counting down from the segments folder, and the sites below it
-stay sites — they are not offered as labels, and a verdict puts them back under
-the label you confirmed:
+`--label-depth`, counting down from the segments folder. The folders below it
+are read through and then let go — they are not offered as labels, and a verdict
+files the clip under the label alone, since the site and the day are in the file
+name already:
 
 ```
-segments/                       # --label-depth 1
-├── BOAALB/PONTO_A/clip.wav     → label BOAALB, site folder PONTO_A kept
-├── BOAALB/POCA/clip.wav        → label BOAALB
-└── PHYLUT/clip.wav             → label PHYLUT (shallower than the depth, still labelled)
+segments/                          # --label-depth 1
+├── BOAALB/PONTO_A/20240115/clip.wav  → label BOAALB, the two folders below it dropped
+├── BOAALB/POCA/clip.wav              → label BOAALB
+└── PHYLUT/clip.wav                   → label PHYLUT (shallower than the depth, still labelled)
 ```
 
 **The file name gives the rest.** By default it is read as
@@ -185,15 +186,19 @@ PONTO_A/BOAALB/clip.wav
 
 - File names are **left exactly as they were found** — the label lives in the
   folder, so there is nothing in the name to correct.
-- Under `--label-depth`, the folders *below* the label are kept too, back in
-  their place: `BOAALB/PONTO_A/clip.wav` corrected to TURDRU becomes
-  `false/TURDRU/PONTO_A/clip.wav`.
+- Under `--label-depth`, the folders *below* the label are **not** rebuilt:
+  `BOAALB/PONTO_A/20240115/clip.wav` corrected to TURDRU becomes
+  `false/TURDRU/clip.wav` — one folder per label, holding the clips themselves.
 - A segment given **more than one label** goes to `multi/` rather than `true/` or
   `false/`, under a folder naming every label.
 - A clip with no label folder is filed straight under `true/`, or under
   `false/<label>/` once you name one.
 - A name collision gets a `_2`, `_3`, … suffix — a reviewed file is never
   overwritten.
+- The folder a clip came from is **removed once its last clip leaves**, along
+  with any parent it empties, so the pending tree shrinks as the review goes on.
+  A folder still holding anything — a pending clip, a stray file — is left alone,
+  and the segments folder itself is never removed.
 - Clips already inside `true/`, `false/` or `multi/` are excluded from the
   pending list, so a review can be spread over several sessions.
 

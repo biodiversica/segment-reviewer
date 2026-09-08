@@ -236,6 +236,15 @@ class SFTPBackend(Backend):
                 if not self.isdir(folder):
                     raise
 
+    def listdir(self, path: str) -> list[str]:
+        try:
+            return list(self._sftp_call("listdir", path))
+        except IOError:
+            return []
+
+    def rmdir(self, path: str) -> None:
+        self._sftp_call("rmdir", path)
+
     def move(self, src: str, dst: str) -> None:
         self.makedirs(posixpath.dirname(dst))
         try:

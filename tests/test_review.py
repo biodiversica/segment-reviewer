@@ -73,8 +73,9 @@ def test_a_verdict_on_a_templated_name_rewrites_the_label_in_it(templated_dir):
 
 
 def test_the_same_layout_read_by_its_folders_instead(templated_dir):
-    """--label-from folder with --label-depth 1 keeps the site folder instead,
-    for a collection whose folders are the record rather than its file names."""
+    """--label-from folder with --label-depth 1 labels by the top folder, and
+    files the clip under that label alone: the site/day folders it was found in
+    are not rebuilt, since the file name already carries both."""
     session = make_session(
         templated_dir, filename_pattern=TEMPLATE, label_from="folder", label_depth=1
     )
@@ -82,10 +83,23 @@ def test_the_same_layout_read_by_its_folders_instead(templated_dir):
     goto_name(session, "BOAALB")
     assert session.view().site == "PONTO A"      # still read from the name
     session.apply_verdict("true")
-    moved = templated_dir / "true" / "BOAALB" / "PONTO_A_20240115"
-    assert [p.name for p in moved.glob("*.wav")] == [
+    moved = templated_dir / "true" / "BOAALB"
+    assert [p.name for p in moved.rglob("*.wav")] == [
         "PONTO_A_20240115T053000_REC_12.0_17.0_BOAALB_0.873.wav"
     ]
+    assert [p.name for p in moved.iterdir()] == [
+        "PONTO_A_20240115T053000_REC_12.0_17.0_BOAALB_0.873.wav"
+    ]
+
+
+def test_a_correction_under_label_depth_drops_the_folders_below_the_label(templated_dir):
+    session = make_session(
+        templated_dir, filename_pattern=TEMPLATE, label_from="folder", label_depth=1
+    )
+    goto_name(session, "BOAALB")
+    session.apply_verdict("false", ["TURDRU"])
+    assert (templated_dir / "false" / "TURDRU"
+            / "PONTO_A_20240115T053000_REC_12.0_17.0_TURDRU_0.873.wav").exists()
 
 
 def test_a_pattern_that_fits_nothing_is_reported(templated_dir):
@@ -130,15 +144,45 @@ def test_several_labels_go_to_multi_under_a_joined_folder(segments_dir):
     ]
 
 
-def test_a_site_folder_under_the_label_is_kept_under_the_new_label(label_on_top_dir):
+def test_a_site_folder_under_the_label_is_not_rebuilt(label_on_top_dir):
+    """BOAALB/PONTO_A/det1.wav corrected to TURDRU lands in false/TURDRU/ — the
+    site folder is not carried over; the clip's name already names the site."""
     session = make_session(label_on_top_dir, label_depth=1)
     goto_name(session, "det1")
     assert session.view().label == "BOAALB"
     session.apply_verdict("false", ["TURDRU"])
-    moved = label_on_top_dir / "false" / "TURDRU" / "PONTO_A"
-    assert [p.name for p in moved.glob("*.wav")] == [
+    moved = label_on_top_dir / "false" / "TURDRU"
+    assert [p.name for p in moved.iterdir()] == [
         "PONTO_A_20240115_053000_12.0_17.0_det1.wav"
     ]
+
+
+def test_the_folders_a_clip_leaves_behind_are_removed(label_on_top_dir):
+    """The last clip out of BOAALB/PONTO_A takes the empty folder with it."""
+    session = make_session(label_on_top_dir, label_depth=1)
+    goto_name(session, "det1")
+    session.apply_verdict("true")
+    assert not (label_on_top_dir / "BOAALB" / "PONTO_A").exists()
+    assert (label_on_top_dir / "BOAALB" / "POCA").is_dir()   # still has its clip
+
+
+def test_pruning_stops_at_the_segments_root(segments_dir):
+    """Reviewing the last pending clip empties the tree but keeps the root."""
+    session = make_session(segments_dir)
+    while session.segments:
+        session.apply_verdict("true")
+    assert segments_dir.is_dir()
+    assert not (segments_dir / "PONTO_A").exists()
+    assert not (segments_dir / "POCA").exists()
+
+
+def test_a_folder_holding_anything_else_is_left_alone(segments_dir):
+    """A folder that still holds a pending clip, or any other file, stays."""
+    (segments_dir / "PONTO_A" / "BOAALB" / "notes.txt").write_text("keep me")
+    session = make_session(segments_dir)
+    goto_name(session, FIRST)
+    session.apply_verdict("true")
+    assert (segments_dir / "PONTO_A" / "BOAALB" / "notes.txt").exists()
 
 
 def test_a_clip_in_the_root_has_no_label_folder_to_keep(segments_dir):

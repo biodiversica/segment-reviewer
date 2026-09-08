@@ -7,7 +7,8 @@ Two independent sources:
   the folder immediately above the file is the label the clip currently carries.
   Collections that keep the class folder on top instead, with sites inside it —
   ``BOAALB/PONTO_A/clip.wav`` — say so with ``--label-depth``, counting folders
-  down from the segments root.
+  down from the segments root; the folders below the label are read through and
+  then dropped, since what they say is in the file name too.
 * **The file name** gives the recording site, when it was recorded, and the
   position of the clip inside that recording. The default pattern is
   ``[site]_[YYYYMMDD]_[HHMMSS]_[start]_[end]_*``; anything else is left alone and
@@ -189,12 +190,11 @@ class SegmentName:
     score: float | None = None
     extra: str | None = None
     #: Folders between the segments root and the label folder, outermost first.
-    #: The label folder itself is not repeated here.
+    #: The label folder itself is not repeated here. Whatever a collection keeps
+    #: *below* the label — the site and day folders of a class-first layout — is
+    #: not recorded: those facts are in the file name, and a reviewed clip is
+    #: filed under its label folder alone.
     prefix: tuple[str, ...] = field(default_factory=tuple)
-    #: Folders between the label folder and the clip — the sites, or whatever
-    #: else a collection keeps under its class folders. Empty in the usual
-    #: layout, where the label is the folder the clip sits in.
-    suffix: tuple[str, ...] = field(default_factory=tuple)
     #: True when the label was captured from the file name rather than a folder.
     label_in_filename: bool = False
 
@@ -233,7 +233,7 @@ class SegmentParser:
         folders = self._folders(posix, root)
         found = self._match_groups(stem)
 
-        label, in_filename, prefix, suffix = self._resolve_label(found.get("label"), folders)
+        label, in_filename, prefix = self._resolve_label(found.get("label"), folders)
         return SegmentName(
             label=label,
             site=self._clean(found.get("site")),
@@ -243,7 +243,6 @@ class SegmentParser:
             score=self._to_float(found.get("score")),
             extra=found.get("extra") or None,
             prefix=prefix,
-            suffix=suffix,
             label_in_filename=in_filename,
         )
 
@@ -278,14 +277,14 @@ class SegmentParser:
 
     def _resolve_label(
         self, from_name: str | None, folders: tuple[str, ...]
-    ) -> tuple[str, bool, tuple[str, ...], tuple[str, ...]]:
-        """Label, whether it came from the file name, and the folders around it."""
+    ) -> tuple[str, bool, tuple[str, ...]]:
+        """Label, whether it came from the file name, and the folders above it."""
         if self.label_from == "filename":
-            return (self._clean(from_name) or ""), bool(from_name), folders, ()
+            return (self._clean(from_name) or ""), bool(from_name), folders
         if self.label_from == "folder" and folders:
             at = self._label_index(len(folders))
-            return self._clean(folders[at]) or "", False, folders[:at], folders[at + 1:]
-        return "", False, folders, ()
+            return self._clean(folders[at]) or "", False, folders[:at]
+        return "", False, folders
 
     def _label_index(self, count: int) -> int:
         """Which of the *count* folders above a clip carries its label.

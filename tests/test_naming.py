@@ -75,15 +75,13 @@ def test_label_depth_reads_the_label_from_the_top_folder():
     """A collection filed class-first, with sites inside: BOAALB/PONTO_A/x.wav."""
     info = SegmentParser(label_depth=1).parse(f"{ROOT}/BOAALB/PONTO_A/x.wav", ROOT)
     assert info.label == "BOAALB"
-    assert info.prefix == ()
-    assert info.suffix == ("PONTO_A",)   # kept, and put back under the new label
+    assert info.prefix == ()             # PONTO_A sits below the label, and is dropped
 
 
 def test_label_depth_counts_down_from_the_segments_root():
     info = SegmentParser(label_depth=2).parse(f"{ROOT}/2024/BOAALB/PONTO_A/x.wav", ROOT)
     assert info.label == "BOAALB"
     assert info.prefix == ("2024",)
-    assert info.suffix == ("PONTO_A",)
 
 
 def test_a_clip_shallower_than_the_depth_is_labelled_by_its_own_folder():
@@ -91,12 +89,12 @@ def test_a_clip_shallower_than_the_depth_is_labelled_by_its_own_folder():
     every clip rather than leaving the shallow ones blank."""
     info = SegmentParser(label_depth=2).parse(f"{ROOT}/PHYLUT/x.wav", ROOT)
     assert info.label == "PHYLUT"
-    assert info.prefix == () and info.suffix == ()
+    assert info.prefix == ()
 
 
 def test_the_default_depth_is_the_folder_the_clip_sits_in(parser):
     info = parser.parse(f"{ROOT}/PONTO_A/BOAALB/x.wav", ROOT)
-    assert (info.label, info.prefix, info.suffix) == ("BOAALB", ("PONTO_A",), ())
+    assert (info.label, info.prefix) == ("BOAALB", ("PONTO_A",))
 
 
 def test_a_negative_depth_is_rejected():

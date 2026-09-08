@@ -59,6 +59,14 @@ class Backend(abc.ABC):
     def makedirs(self, path: str) -> None: ...
 
     @abc.abstractmethod
+    def listdir(self, path: str) -> list[str]:
+        """Names directly inside *path*; empty when it holds nothing or is gone."""
+
+    @abc.abstractmethod
+    def rmdir(self, path: str) -> None:
+        """Remove an empty folder. Never called on one that holds anything."""
+
+    @abc.abstractmethod
     def move(self, src: str, dst: str) -> None: ...
 
     @abc.abstractmethod
@@ -120,6 +128,25 @@ class Backend(abc.ABC):
             path = self.join(dest_dir, f"{stem}_{n}{ext}")
             n += 1
         return path
+
+    def prune_empty(self, folder: str, stop: str) -> None:
+        """Remove *folder* and any parent it empties, up to but excluding *stop*.
+
+        Filing a clip leaves the folder it was found in behind, and under
+        ``--label-depth`` a whole site/day branch can empty out one clip at a
+        time. Walking up from the folder just vacated clears exactly those, and
+        stops at the first one still holding something — a folder with pending
+        clips, a stray file, or the segments root itself, which is never removed.
+        """
+        current = folder
+        while current and self.is_inside(current, stop) and self.relpath(current, stop) != ".":
+            try:
+                if self.listdir(current):
+                    return
+                self.rmdir(current)
+            except OSError:  # a race, a permission, a remote hiccup: leave it be
+                return
+            current = self.dirname(current)
 
     def is_inside(self, path: str, folder: str) -> bool:
         """True when *path* sits inside *folder* (or is it)."""

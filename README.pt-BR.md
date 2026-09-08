@@ -37,15 +37,16 @@ diretamente na pasta de segmentos simplesmente ainda não tem rótulo.
 
 **A pasta da classe vem primeiro?** Alguns conjuntos são organizados ao
 contrário, com os pontos *dentro* de cada pasta de classe. Diga qual nível carrega
-o rótulo com `--label-depth`, contando a partir da pasta de segmentos: os pontos
-abaixo dele continuam sendo pontos — não são oferecidos como rótulos, e o veredito
-os recoloca sob o rótulo que você confirmou:
+o rótulo com `--label-depth`, contando a partir da pasta de segmentos. As pastas
+abaixo dele são percorridas e depois deixadas de lado — não são oferecidas como
+rótulos, e o veredito arquiva o clipe sob o rótulo apenas, já que o ponto e o dia
+estão no próprio nome do arquivo:
 
 ```
-segmentos/                       # --label-depth 1
-├── BOAALB/PONTO_A/clipe.wav     → rótulo BOAALB, a pasta PONTO_A é mantida
-├── BOAALB/POCA/clipe.wav        → rótulo BOAALB
-└── PHYLUT/clipe.wav             → rótulo PHYLUT (mais raso que o nível, ainda rotulado)
+segmentos/                             # --label-depth 1
+├── BOAALB/PONTO_A/20240115/clipe.wav  → rótulo BOAALB, as duas pastas abaixo são descartadas
+├── BOAALB/POCA/clipe.wav              → rótulo BOAALB
+└── PHYLUT/clipe.wav                   → rótulo PHYLUT (mais raso que o nível, ainda rotulado)
 ```
 
 **O nome do arquivo fornece o resto das informações.** Por padrão um arquivo de áudio é lido como
@@ -181,15 +182,20 @@ PONTO_A/BOAALB/clipe.wav
 
 - Os nomes dos arquivos ficam **exatamente como foram encontrados** — o rótulo
   está na pasta, então não há nada a corrigir no nome.
-- Com `--label-depth`, as pastas *abaixo* do rótulo também são mantidas, no lugar
-  delas: `BOAALB/PONTO_A/clipe.wav` corrigido para TURDRU vira
-  `falso/TURDRU/PONTO_A/clipe.wav`.
+- Com `--label-depth`, as pastas *abaixo* do rótulo **não** são recriadas:
+  `BOAALB/PONTO_A/20240115/clipe.wav` corrigido para TURDRU vira
+  `falso/TURDRU/clipe.wav` — uma pasta por rótulo, com os clipes dentro.
 - Um segmento com **mais de um rótulo** vai para `multi/` em vez de
   `verdadeiro/` ou `falso/`, sob uma pasta que nomeia todos os rótulos.
 - Um clipe sem pasta de rótulo é arquivado direto em `verdadeiro/`, ou em
   `falso/<rótulo>/` assim que você nomear um.
 - Se o nome colidir, ganha um sufixo `_2`, `_3`, … — um arquivo já revisado nunca
   é sobrescrito.
+- A pasta de onde o clipe saiu é **removida quando o último clipe dela sai**,
+  junto com as pastas acima que ficarem vazias, então a árvore de pendentes
+  encolhe conforme a revisão avança. Uma pasta que ainda tenha qualquer coisa —
+  um clipe pendente, um arquivo solto — é preservada, e a pasta de segmentos em
+  si nunca é removida.
 - Clipes que já estão em `verdadeiro/`, `falso/` ou `multi/` ficam fora da lista
   de pendentes, então a revisão pode ser dividida em várias sessões.
 
