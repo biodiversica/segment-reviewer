@@ -193,6 +193,25 @@ class ReviewSession:
             if str(info.label).strip()
         })
 
+    def pattern_report(self) -> tuple[int, int, str]:
+        """How many pending names the filename pattern reads, and one it does not.
+
+        A template that does not fit the collection captures nothing, and the
+        clips then arrive in the GUI with no site, time or score — reviewable,
+        but with the pattern silently doing nothing. Counting the matches at
+        start-up turns that into a line the user can act on.
+        """
+        with self._lock:
+            pending = list(self.segments)
+        matched, example = 0, ""
+        for path in pending:
+            name = self.backend.basename(path)
+            if self.parser.matches(name):
+                matched += 1
+            elif not example:
+                example = name
+        return matched, len(pending), example
+
     def label_choices(self) -> list[str]:
         """The labels offered as buttons in the reviewer."""
         return self.labels.labels

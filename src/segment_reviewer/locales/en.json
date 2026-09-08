@@ -103,6 +103,10 @@
     "label_from": "Label source",
     "label_depth": "Label folder depth",
     "pattern": "Filename pattern",
-    "labels_file": "Label list file"
+    "labels_file": "Label list file",
+    "pattern_match": "Names read by it",
+    "pattern_none": "The filename pattern read none of the {total} pending file names, so no site, time or score is shown. Check it against a real name:",
+    "pattern_some": "The filename pattern read only {matched} of the {total} pending file names; the rest show no site, time or score. One it missed:",
+    "pattern_example": "{name}"
   }
 }

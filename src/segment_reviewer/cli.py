@@ -89,6 +89,21 @@ def _lan_address() -> str:
         sock.close()
 
 
+def _pattern_note(session: ReviewSession, t) -> str:
+    """Warning shown when the filename pattern reads few of the pending names.
+
+    A pattern that fits nothing is silent otherwise: the clips still show up,
+    just without their site, time or score, which looks like the GUI dropping
+    them rather than the pattern missing.
+    """
+    matched, total, example = session.pattern_report()
+    if not total or matched == total:
+        return ""
+    key = "cli.pattern_none" if matched == 0 else "cli.pattern_some"
+    note = t(key, matched=matched, total=total)
+    return f"{note}\n  {t('cli.pattern_example', name=example)}" if example else note
+
+
 def _summary(session: ReviewSession, config: ReviewConfig, t) -> str:
     counts = session.counts()
     freq = f"{config.freq_min_hz} – " + (
@@ -103,6 +118,7 @@ def _summary(session: ReviewSession, config: ReviewConfig, t) -> str:
         (t("cli.label_from"), config.label_from),
         *([(t("cli.label_depth"), str(config.label_depth))] if config.label_depth else []),
         (t("cli.pattern"), config.filename_pattern),
+        (t("cli.pattern_match"), "{} / {}".format(*session.pattern_report()[:2])),
         (t("cli.labels"), ", ".join(session.label_choices()) or t("cli.labels_none")),
         (t("cli.labels_file"),
          session.labels.path if session.labels.persisted else t("cli.off")),
@@ -317,6 +333,10 @@ def review(
     url = f"http://{shown_host}:{port}/{suffix}"
 
     typer.echo(_summary(session, config, t))
+    note = _pattern_note(session, t)
+    if note:
+        typer.echo("")
+        typer.secho(note, fg=typer.colors.YELLOW, err=True)
     typer.echo("")
     typer.secho(f'{t("cli.serving")}  {url}', fg=typer.colors.GREEN, bold=True)
     if host in ("0.0.0.0", "::"):

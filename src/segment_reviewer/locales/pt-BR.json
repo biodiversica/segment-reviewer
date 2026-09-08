@@ -103,6 +103,10 @@
     "label_from": "Origem do rótulo",
     "label_depth": "Nível da pasta do rótulo",
     "pattern": "Padrão do nome",
-    "labels_file": "Arquivo da lista"
+    "labels_file": "Arquivo da lista",
+    "pattern_match": "Nomes lidos por ele",
+    "pattern_none": "O padrão do nome não leu nenhum dos {total} arquivos pendentes, por isso não aparecem sítio, data nem score. Confira o padrão com um nome real:",
+    "pattern_some": "O padrão do nome leu apenas {matched} dos {total} arquivos pendentes; nos demais não aparecem sítio, data nem score. Um dos que ficaram de fora:",
+    "pattern_example": "{name}"
   }
 }

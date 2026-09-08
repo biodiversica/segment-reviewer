@@ -247,6 +247,11 @@ class SegmentParser:
             label_in_filename=in_filename,
         )
 
+    def matches(self, filename: str) -> bool:
+        """True when the pattern reads *filename* — used to report a mismatch."""
+        stem = posixpath.splitext(posixpath.basename(filename.replace("\\", "/")))[0]
+        return any(regex.search(stem) for regex in self.regexes)
+
     def _match_groups(self, stem: str) -> dict[str, str]:
         """Groups captured by the pattern(s); later ones only fill what is missing."""
         found: dict[str, str] = {}

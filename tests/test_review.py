@@ -88,6 +88,20 @@ def test_the_same_layout_read_by_its_folders_instead(templated_dir):
     ]
 
 
+def test_a_pattern_that_fits_nothing_is_reported(templated_dir):
+    """A wrong pattern shows up as clips with no site, time or score; the count
+    of names it actually read is what says so at start-up."""
+    session = make_session(templated_dir, filename_pattern="default", label_from="folder")
+    matched, total, example = session.pattern_report()
+    assert (matched, total) == (0, 2)
+    assert example.endswith(".wav")
+
+
+def test_a_pattern_that_fits_reports_every_name(templated_dir):
+    session = make_session(templated_dir, filename_pattern=TEMPLATE, label_from="filename")
+    assert session.pattern_report() == (2, 2, "")
+
+
 # ── where a verdict files a clip ─────────────────────────────────────────────
 def test_true_keeps_the_clip_where_it_was_under_true(session, segments_dir):
     goto_name(session, FIRST)
