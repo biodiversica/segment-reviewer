@@ -47,6 +47,11 @@ class ReviewSession:
         self.backend = backend
         self.config = config
         self.dirs = config.resolved_verdict_dirs()
+        #: Where the verdict folders live — the segments folder unless --output
+        #: says otherwise. Resolved once, so every path built from it agrees.
+        self.output_root = (
+            backend.resolve(config.output) if str(config.output).strip() else backend.root
+        )
         self.parser = SegmentParser(
             pattern=config.filename_pattern,
             label_from=config.label_from,
@@ -78,21 +83,37 @@ class ReviewSession:
         if self.config.multi_label:
             wanted.append(self.dirs["multi"])
         for name in wanted:
-            self.backend.makedirs(self.backend.join(self.backend.root, name))
+            self.backend.makedirs(self.verdict_root(name))
 
     def _annotations_path(self) -> str:
         if not self.config.save_annotations:
             return self.backend.resolve(self.config.annotations_path)
         raw = self.config.annotations_path.strip()
         if not raw:
-            raw = "annotations.csv"
+            # A written table is reviewed output, so it goes where the verdict
+            # folders go; a path given by hand is still read as documented,
+            # against the segments folder.
+            return self.backend.join(self.output_root, "annotations.csv")
         return self.backend.resolve(raw)
 
     # ── the pending list ─────────────────────────────────────────────────────
+    def verdict_root(self, name: str) -> str:
+        """Absolute path of one verdict folder, under wherever the output goes."""
+        return self.backend.join(self.output_root, name)
+
     def _skip_roots(self) -> list[str]:
-        """Folders excluded from review — every verdict name, in any language."""
+        """Folders excluded from review — every verdict name, in any language.
+
+        Taken under the segments folder as well as under ``--output``: a review
+        writing elsewhere must still skip the verdict folders of an earlier run
+        that wrote in place, and an output folder nested inside the segments
+        folder must not hand its own clips back as pending.
+        """
         names = set(ALL_VERDICT_DIR_NAMES) | set(self.dirs.values())
-        return [self.backend.join(self.backend.root, name) for name in sorted(names)]
+        roots = {self.backend.root, self.output_root}
+        return sorted(
+            self.backend.join(root, name) for root in roots for name in names
+        )
 
     def collect(self) -> list[str]:
         skip = self._skip_roots()
@@ -114,7 +135,7 @@ class ReviewSession:
         """Walk the verdict folders once. Over SFTP this is the expensive call."""
         done = {}
         for key, name in self.dirs.items():
-            folder = self.backend.join(self.backend.root, name)
+            folder = self.verdict_root(name)
             done[key] = len(self.backend.walk_wavs(folder)) if self.backend.isdir(folder) else 0
         return done
 
@@ -237,7 +258,7 @@ class ReviewSession:
           subfolder per label for rejections.
         """
         bucket = "multi" if len(final) > 1 else verdict
-        verdict_root = self.backend.join(self.backend.root, self.dirs[bucket])
+        verdict_root = self.verdict_root(self.dirs[bucket])
 
         if info.label_in_filename:
             if bucket == "false" and final:
@@ -306,7 +327,7 @@ class ReviewSession:
 
             if self.index >= len(self.segments) and self.index > 0:
                 self.index -= 1
-            return {"moved": self.backend.relpath(dest, self.backend.root)}
+            return {"moved": self.backend.relpath(dest, self.output_root)}
 
     # ── media ────────────────────────────────────────────────────────────────
     def spectrogram(self, index: int, *, spec_type: str, fmin: int, fmax: int,

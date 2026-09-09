@@ -202,6 +202,21 @@ PONTO_A/BOAALB/clip.wav
 - Clips already inside `true/`, `false/` or `multi/` are excluded from the
   pending list, so a review can be spread over several sessions.
 
+**Writing somewhere else.** `--output` (or `-o`) puts the three verdict folders
+in a folder of your choosing instead of the segments folder, leaving the
+collection you are reviewing untouched:
+
+```bash
+segment-reviewer /data/segments --output /data/reviewed
+```
+
+A relative path is read against the segments folder (`-o reviewed` →
+`/data/segments/reviewed/`), an absolute one is taken as given, and over SSH it
+is a path on the remote machine. The annotation table follows it too, unless
+`--annotations-path` says otherwise. Pass the same `--output` again to resume a
+review: that is where the "already true/false" tallies are counted, and clips
+already written there are never handed back as pending.
+
 ### The annotation table
 
 With `--annotations`, every reviewed segment is appended to a CSV with columns
@@ -390,6 +405,8 @@ segment-reviewer SEGMENTS [OPTIONS]
       --fmax INTEGER            Initial maximum frequency, Hz; 0 = Nyquist  [default: 0]
       --db-floor INTEGER        Initial dB floor  [default: -80]
 
+  -o, --output TEXT             Folder the reviewed segments are written to
+                                [default: the segments folder]
       --true-dir TEXT           Folder for accepted segments  [default: per --lang]
       --false-dir TEXT          Folder for rejected segments  [default: per --lang]
       --multi-dir TEXT          Folder for multi-label segments  [default: multi]

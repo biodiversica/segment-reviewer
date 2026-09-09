@@ -82,6 +82,7 @@
   },
   "cli": {
     "folder": "Pasta de segmentos",
+    "output": "Revisados vão para",
     "pending": "Pendentes de revisão",
     "already_true": "Já verdadeiros",
     "already_false": "Já falsos",

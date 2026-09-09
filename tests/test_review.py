@@ -116,6 +116,49 @@ def test_a_pattern_that_fits_reports_every_name(templated_dir):
     assert session.pattern_report() == (2, 2, "")
 
 
+# ── where the reviewed clips are written ─────────────────────────────────────
+def test_output_sends_the_verdict_folders_elsewhere(segments_dir, tmp_path):
+    out = tmp_path / "reviewed"
+    session = make_session(segments_dir, output=str(out))
+    goto_name(session, FIRST)
+    session.apply_verdict("true")
+    assert (out / "true" / "PONTO_A" / "BOAALB").is_dir()
+    assert not (segments_dir / "true").exists()
+    assert not (segments_dir / "PONTO_A" / "BOAALB").exists()   # emptied and pruned
+
+
+def test_a_relative_output_is_read_against_the_segments_folder(segments_dir):
+    session = make_session(segments_dir, output="reviewed")
+    goto_name(session, FIRST)
+    session.apply_verdict("true")
+    assert (segments_dir / "reviewed" / "true" / "PONTO_A" / "BOAALB").is_dir()
+
+
+def test_an_output_inside_the_segments_folder_is_not_offered_for_review(segments_dir):
+    """Its own reviewed clips must not come back as pending on the next scan."""
+    session = make_session(segments_dir, output="reviewed")
+    goto_name(session, FIRST)
+    session.apply_verdict("true")
+    session.rescan()
+    assert session.counts() == {"pending": 2, "true": 1, "false": 0, "multi": 0}
+
+
+def test_resuming_counts_what_an_earlier_run_wrote_to_the_output(segments_dir, tmp_path):
+    out = tmp_path / "reviewed"
+    make_session(segments_dir, output=str(out)).apply_verdict("true")
+    resumed = make_session(segments_dir, output=str(out))
+    assert resumed.counts() == {"pending": 2, "true": 1, "false": 0, "multi": 0}
+
+
+def test_the_annotation_table_is_written_to_the_output_folder(segments_dir, tmp_path):
+    out = tmp_path / "reviewed"
+    session = make_session(segments_dir, output=str(out), save_annotations=True)
+    goto_name(session, FIRST)
+    session.apply_verdict("true")
+    assert (out / "annotations.csv").exists()
+    assert not (segments_dir / "annotations.csv").exists()
+
+
 # ── where a verdict files a clip ─────────────────────────────────────────────
 def test_true_keeps_the_clip_where_it_was_under_true(session, segments_dir):
     goto_name(session, FIRST)

@@ -65,6 +65,11 @@ class ReviewConfig:
     freq_max_hz: int = 0  # 0 → Nyquist
     db_min: int = -80
 
+    #: Folder the verdict folders are created in. Empty means the segments
+    #: folder itself; a relative path is read against it, an absolute one is
+    #: taken as given, so a review can write anywhere the reviewer can reach.
+    output: str = ""
+
     # Verdict folder names (resolved from `lang` when left empty)
     true_dir: str = ""
     false_dir: str = ""

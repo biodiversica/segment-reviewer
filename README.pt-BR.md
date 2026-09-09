@@ -199,6 +199,21 @@ PONTO_A/BOAALB/clipe.wav
 - Clipes que já estão em `verdadeiro/`, `falso/` ou `multi/` ficam fora da lista
   de pendentes, então a revisão pode ser dividida em várias sessões.
 
+**Gravar em outro lugar.** `--output` (ou `-o`) cria as três pastas de veredito
+na pasta que você escolher, em vez de dentro da pasta de segmentos, deixando
+intacto o conjunto que está sendo revisado:
+
+```bash
+segment-reviewer /dados/segmentos --output /dados/revisados
+```
+
+Um caminho relativo é lido a partir da pasta de segmentos (`-o revisados` →
+`/dados/segmentos/revisados/`), um absoluto é usado como está, e por SSH é um
+caminho na máquina remota. A tabela de anotações também vai para lá, a menos que
+`--annotations-path` diga outra coisa. Use o mesmo `--output` para retomar uma
+revisão: é ali que as contagens de "já verdadeiros/falsos" são feitas, e os
+clipes já gravados lá nunca voltam para a lista de pendentes.
+
 ### A tabela de anotações
 
 Com `--annotations`, cada segmento revisado é acrescentado a um CSV com as colunas
@@ -390,6 +405,8 @@ segment-reviewer SEGMENTOS [OPÇÕES]
       --fmax INTEGER            Frequência máxima inicial, Hz; 0 = Nyquist  [padrão: 0]
       --db-floor INTEGER        Valor mínimo em dB inicial  [padrão: -80]
 
+  -o, --output TEXT             Pasta onde os segmentos revisados são gravados
+                                [padrão: a própria pasta de segmentos]
       --true-dir TEXT           Pasta dos segmentos aceitos  [padrão: conforme --lang]
       --false-dir TEXT          Pasta dos segmentos rejeitados  [padrão: conforme --lang]
       --multi-dir TEXT          Pasta dos segmentos com vários rótulos  [padrão: multi]

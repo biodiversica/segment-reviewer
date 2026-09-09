@@ -82,6 +82,7 @@
   },
   "cli": {
     "folder": "Segments folder",
+    "output": "Reviewed to",
     "pending": "Pending review",
     "already_true": "Already true",
     "already_false": "Already false",

@@ -111,6 +111,7 @@ def _summary(session: ReviewSession, config: ReviewConfig, t) -> str:
     )
     rows = [
         (t("cli.folder"), session.backend.display),
+        (t("cli.output"), session.output_root),
         (t("cli.pending"), str(counts["pending"])),
         (t("cli.already_true"), str(counts["true"])),
         (t("cli.already_false"), str(counts["false"])),
@@ -197,7 +198,7 @@ def review(
     annotations_path: str = typer.Option(
         "", "--annotations-path",
         help="Where that table lives. Relative paths are inside the segments folder. "
-             "[default: <segments>/annotations.csv]",
+             "[default: <output>/annotations.csv]",
     ),
     spec_type: str = typer.Option(
         "mel", "--spec-type",
@@ -207,6 +208,12 @@ def review(
     fmin: int = typer.Option(0, "--fmin", min=0, max=96000, help="Initial minimum frequency, in Hz."),
     fmax: int = typer.Option(0, "--fmax", min=0, max=96000, help="Initial maximum frequency in Hz; 0 = Nyquist."),
     db_floor: int = typer.Option(-80, "--db-floor", min=-120, max=-20, help="Initial dB floor of the colour scale."),
+    output: str = typer.Option(
+        "", "--output", "-o",
+        help="Where the reviewed segments are written: the folder holding "
+             "true/, false/ and multi/. Relative paths are inside the segments "
+             "folder.  [default: the segments folder itself]",
+    ),
     true_dir: str = typer.Option("", "--true-dir", help="Folder name for accepted segments. [default: per --lang]"),
     false_dir: str = typer.Option("", "--false-dir", help="Folder name for rejected segments. [default: per --lang]"),
     multi_dir: str = typer.Option("", "--multi-dir", help="Folder name for multi-label segments. [default: multi]"),
@@ -291,6 +298,7 @@ def review(
         multi_label=multi_label,
         save_annotations=annotations,
         annotations_path=annotations_path,
+        output=output,
         spec_type=spec_type,
         freq_min_hz=fmin,
         freq_max_hz=fmax,
